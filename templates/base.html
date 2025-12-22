@@ -189,8 +189,14 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <nav>
         <a href="/" class="logo">FEES SYS</a>
-        <div class="nav-links">
+        <div class="nav-links" style="display: flex; gap: 1rem; align-items: center;">
+            {% if user.is_authenticated %}
+            <span style="color: var(--text-dim); font-size: 0.9rem;">Hi, {{ user.username }}</span>
+            <a href="{% url 'logout' %}" class="login-btn"
+                style="background: rgba(255, 255, 255, 0.1); color: var(--text-main);">Logout</a>
+            {% else %}
             <a href="{% url 'login' %}" class="login-btn">Login</a>
+            {% endif %}
         </div>
     </nav>
 

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 400px; margin: 2rem auto;">
+    <h1 style="text-align: center;">Login</h1>
+    <form hx-post="{% url 'login' %}" hx-target="body" hx-push-url="true">
+        {% if error %}
+        <div style="color: var(--error); margin-bottom: 1rem; text-align: center;">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required placeholder="Enter username">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter password">
+        </div>
+
+        <button type="submit" class="btn-submit">Login</button>
+    </form>
+    <p style="text-align: center; margin-top: 1.5rem; color: var(--text-dim);">
+        Don't have an account? <a href="{% url 'signup' %}" style="color: var(--primary); text-decoration: none;">Sign
+            Up</a>
+    </p>
+</div>
+{% endblock %}
