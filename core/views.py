@@ -13,17 +13,17 @@ def add_payment(request):
     if request.method == 'POST':
         student_name = request.POST.get('student_name')
         amount = request.POST.get('amount')
-        payment_type = request.POST.get('payment_type')
         description = request.POST.get('description')
         DraftPayment.objects.create(
             user=request.user,
             student_name=student_name,
             amount=amount,
-            payment_type=payment_type,
             description=description
         )
         if request.headers.get('HX-Request'):
-            return render(request, 'home.html')
+            response = render(request, 'add_payment.html')
+            response['HX-Trigger'] = 'showDraftToast'
+            return response
         return redirect('index')
     return render(request, 'add_payment.html')
 
@@ -32,17 +32,17 @@ def add_expense(request):
     if request.method == 'POST':
         expense_name = request.POST.get('expense_name')
         amount = request.POST.get('amount')
-        category = request.POST.get('category')
         description = request.POST.get('description')
         DraftExpense.objects.create(
             user=request.user,
             expense_name=expense_name,
             amount=amount,
-            category=category,
             description=description
         )
         if request.headers.get('HX-Request'):
-            return render(request, 'home.html')
+            response = render(request, 'add_expense.html')
+            response['HX-Trigger'] = 'showDraftToast'
+            return response
         return redirect('index')
     return render(request, 'add_expense.html')
 
@@ -98,6 +98,52 @@ def view_confirmed(request):
     return render(request, 'confirmed_transactions.html', {
         'payments': payments,
         'expenses': expenses
+    })
+
+from django.db.models import Sum, functions
+from datetime import datetime
+
+@login_required(login_url='login')
+def analyze_view(request):
+    # Aggregate payments by month and year
+    payment_stats = DraftPayment.objects.filter(status='Accepted').annotate(
+        month=functions.TruncMonth('created_at')
+    ).values('month').annotate(total=Sum('amount')).order_by('-month')
+
+    # Aggregate expenses by month and year
+    expense_stats = DraftExpense.objects.filter(status='Accepted').annotate(
+        month=functions.TruncMonth('created_at')
+    ).values('month').annotate(total=Sum('amount')).order_by('-month')
+
+    # Combine data by month
+    monthly_data = {}
+    for p in payment_stats:
+        m_str = p['month'].strftime('%B %Y')
+        monthly_data[m_str] = {'month_obj': p['month'], 'payments': p['total'], 'expenses': 0}
+    
+    for e in expense_stats:
+        m_str = e['month'].strftime('%B %Y')
+        if m_str in monthly_data:
+            monthly_data[m_str]['expenses'] = e['total']
+        else:
+            monthly_data[m_str] = {'month_obj': e['month'], 'payments': 0, 'expenses': e['total']}
+
+    # Calculate net and sort
+    final_report = []
+    for month, data in monthly_data.items():
+        net = data['payments'] - data['expenses']
+        final_report.append({
+            'month': month,
+            'month_obj': data['month_obj'],
+            'payments': data['payments'],
+            'expenses': data['expenses'],
+            'net': net
+        })
+    
+    final_report.sort(key=lambda x: x['month_obj'], reverse=True)
+
+    return render(request, 'analyze.html', {
+        'report': final_report
     })
 
 def signup_view(request):

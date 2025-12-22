@@ -3,7 +3,7 @@
 {% block content %}
 <div class="view-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h1>Draft Expenses</h1>
+        <h1>Financial Analysis</h1>
         <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Home</a>
     </div>
 
@@ -13,35 +13,26 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Expense</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>User</th>
-                            {% if user.is_staff %}<th>Actions</th>{% endif %}
+                            <th>Month</th>
+                            <th>Total Payments</th>
+                            <th>Total Expenses</th>
+                            <th>Net Profit/Loss</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for expense in expenses %}
+                        {% for item in report %}
                         <tr>
-                            <td style="min-width: 140px;">{{ expense.expense_name }}</td>
-                            <td class="amount-cell expense-amt">Rs.{{ expense.amount }}</td>
-                            <td>{{ expense.created_at|date:"M d, Y" }}</td>
-                            <td style="color: var(--text-dim); font-size: 0.85rem;">{{expense.user.username}}</td>
-                            {% if user.is_staff %}
-                            <td>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <a href="{% url 'approve_expense' expense.pk %}" class="btn-sm"
-                                        style="background: var(--accent);">Accept</a>
-                                    <a href="{% url 'decline_expense' expense.pk %}" class="btn-sm"
-                                        style="background: var(--error);">Decline</a>
-                                </div>
+                            <td style="font-weight: 600;">{{ item.month }}</td>
+                            <td class="amount-cell" style="color: #4ade80;">+${{ item.payments }}</td>
+                            <td class="amount-cell" style="color: #fca5a5;">-${{ item.expenses }}</td>
+                            <td class="amount-cell"
+                                style="color: {% if item.net >= 0 %}var(--accent){% else %}#f87171{% endif %}; font-weight: 800;">
+                                {% if item.net >= 0 %}+{% endif %}${{ item.net }}
                             </td>
-                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No draft
-                                expenses found.</td>
+                            <td colspan="4" class="empty-state">No confirmed data to analyze.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -78,7 +69,7 @@
     }
 
     td {
-        padding: 1rem;
+        padding: 1.2rem 1rem;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
@@ -87,12 +78,7 @@
     }
 
     .amount-cell {
-        font-weight: 700;
-        color: var(--accent);
-    }
-
-    .expense-amt {
-        color: #fca5a5;
+        font-family: 'Inter', monospace;
     }
 
     .empty-state {
