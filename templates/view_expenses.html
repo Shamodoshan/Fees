@@ -18,6 +18,7 @@
                             <th>Category</th>
                             <th>Date</th>
                             <th>User</th>
+                            {% if user.is_staff %}<th>Actions</th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -28,10 +29,21 @@
                             <td>{{ expense.category }}</td>
                             <td>{{ expense.created_at|date:"M d" }}</td>
                             <td style="color: var(--text-dim); font-size: 0.85rem;">{{expense.user.username}}</td>
+                            {% if user.is_staff %}
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="{% url 'approve_expense' expense.pk %}" class="btn-sm"
+                                        style="background: var(--accent);">Accept</a>
+                                    <a href="{% url 'decline_expense' expense.pk %}" class="btn-sm"
+                                        style="background: var(--error);">Decline</a>
+                                </div>
+                            </td>
+                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="empty-state">No draft expenses found.</td>
+                            <td colspan="{% if user.is_staff %}6{% else %}5{% endif %}" class="empty-state">No draft
+                                expenses found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -47,14 +47,56 @@ def add_expense(request):
     return render(request, 'add_expense.html')
 
 def view_payments(request):
-    payments = DraftPayment.objects.all().order_by('-created_at')
+    payments = DraftPayment.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_payments.html', {
         'payments': payments
     })
 
 def view_expenses(request):
-    expenses = DraftExpense.objects.all().order_by('-created_at')
+    expenses = DraftExpense.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_expenses.html', {
+        'expenses': expenses
+    })
+
+# Admin Approval Views
+@login_required(login_url='login')
+def approve_payment(request, pk):
+    if request.user.is_staff:
+        payment = DraftPayment.objects.get(pk=pk)
+        payment.status = 'Accepted'
+        payment.save()
+    return redirect('view_payments')
+
+@login_required(login_url='login')
+def decline_payment(request, pk):
+    if request.user.is_staff:
+        payment = DraftPayment.objects.get(pk=pk)
+        payment.status = 'Declined'
+        payment.save()
+    return redirect('view_payments')
+
+@login_required(login_url='login')
+def approve_expense(request, pk):
+    if request.user.is_staff:
+        expense = DraftExpense.objects.get(pk=pk)
+        expense.status = 'Accepted'
+        expense.save()
+    return redirect('view_expenses')
+
+@login_required(login_url='login')
+def decline_expense(request, pk):
+    if request.user.is_staff:
+        expense = DraftExpense.objects.get(pk=pk)
+        expense.status = 'Declined'
+        expense.save()
+    return redirect('view_expenses')
+
+@login_required(login_url='login')
+def view_confirmed(request):
+    payments = DraftPayment.objects.filter(status='Accepted').order_by('-created_at')
+    expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_at')
+    return render(request, 'confirmed_transactions.html', {
+        'payments': payments,
         'expenses': expenses
     })
 

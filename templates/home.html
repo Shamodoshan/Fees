@@ -2,10 +2,7 @@
 
 {% block content %}
 <div class="home-container">
-    <div class="hero" style="text-align: center; margin-bottom: var(--space-lg);">
-        <h1 style="margin-bottom: 0.5rem;">Welcome Back</h1>
-        <p style="color: var(--text-dim); font-size: 1.1rem;">Manage your fees and expenses with precision.</p>
-    </div>
+
 
     <div class="nav-grid">
         <a href="{% url 'add_payment' %}" class="nav-card">
@@ -30,6 +27,12 @@
             <div class="icon-box">📊</div>
             <h2>View Expenses</h2>
             <p>Browse through all existing draft expenses.</p>
+        </a>
+
+        <a href="{% url 'view_confirmed' %}" class="nav-card">
+            <div class="icon-box">✅</div>
+            <h2>Confirmed Transactions</h2>
+            <p>View all accepted and confirmed entries.</p>
         </a>
     </div>
 </div>
