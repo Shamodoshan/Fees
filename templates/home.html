@@ -20,10 +20,16 @@
             <p>Log a pending or draft expense for the project.</p>
         </a>
 
-        <a href="{% url 'view_drafts' %}" class="nav-card">
-            <div class="icon-box">📂</div>
-            <h2>View Records</h2>
-            <p>Browse through all existing draft payments and expenses.</p>
+        <a href="{% url 'view_payments' %}" class="nav-card">
+            <div class="icon-box">💳</div>
+            <h2>View Payments</h2>
+            <p>Browse through all existing draft payments.</p>
+        </a>
+
+        <a href="{% url 'view_expenses' %}" class="nav-card">
+            <div class="icon-box">📊</div>
+            <h2>View Expenses</h2>
+            <p>Browse through all existing draft expenses.</p>
         </a>
     </div>
 </div>

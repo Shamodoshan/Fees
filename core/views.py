@@ -38,11 +38,15 @@ def add_expense(request):
         return redirect('index')
     return render(request, 'add_expense.html')
 
-def view_drafts(request):
+def view_payments(request):
     payments = DraftPayment.objects.all().order_by('-created_at')
+    return render(request, 'view_payments.html', {
+        'payments': payments
+    })
+
+def view_expenses(request):
     expenses = DraftExpense.objects.all().order_by('-created_at')
-    return render(request, 'view_drafts.html', {
-        'payments': payments,
+    return render(request, 'view_expenses.html', {
         'expenses': expenses
     })
 
