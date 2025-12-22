@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Add Draft Payment</h1>
+        <a href="/" style="color: var(--primary); text-decoration: none;">&larr; Back to Home</a>
+    </div>
+
+    <form hx-post="{% url 'add_payment' %}" hx-target="#main-content" hx-push-url="true">
+        <div class="form-group">
+            <label for="student_name">Student Name</label>
+            <input type="text" id="student_name" name="student_name" required placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" step="0.01" id="amount" name="amount" required placeholder="0.00">
+        </div>
+
+        <div class="form-group">
+            <label for="payment_type">Payment Type</label>
+            <select id="payment_type" name="payment_type" required>
+                <option value="Tuition">Tuition</option>
+                <option value="Library">Library</option>
+                <option value="Exam">Exam</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description (Optional)</label>
+            <textarea id="description" name="description" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">Save Draft Payment</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="home-container">
+    <div class="hero">
+        <h1 style="font-size: 3.5rem; margin-bottom: 1rem; text-align: center;">Welcome Back</h1>
+        <p style="text-align: center; color: var(--text-dim); font-size: 1.2rem; margin-bottom: 4rem;">Manage your fees
+            and expenses with precision.</p>
+    </div>
+
+    <div class="nav-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+        <a href="{% url 'add_payment' %}" class="nav-card">
+            <div class="icon-box">💰</div>
+            <h2>Add Draft Payment</h2>
+            <p>Record a new draft payment from students.</p>
+        </a>
+
+        <a href="{% url 'add_expense' %}" class="nav-card">
+            <div class="icon-box">📉</div>
+            <h2>Add Draft Expense</h2>
+            <p>Log a pending or draft expense for the project.</p>
+        </a>
+
+        <a href="{% url 'view_drafts' %}" class="nav-card">
+            <div class="icon-box">📂</div>
+            <h2>View Records</h2>
+            <p>Browse through all existing draft payments and expenses.</p>
+        </a>
+    </div>
+</div>
+
+<style>
+    .nav-card {
+        background: var(--card-bg);
+        padding: 2.5rem;
+        border-radius: 20px;
+        text-decoration: none;
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .nav-card:hover {
+        transform: translateY(-10px);
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--primary);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-box {
+        font-size: 3rem;
+        margin-bottom: 1.5rem;
+        background: rgba(99, 102, 241, 0.1);
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+    }
+
+    .nav-card h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .nav-card p {
+        color: var(--text-dim);
+    }
+</style>
+{% endblock %}
