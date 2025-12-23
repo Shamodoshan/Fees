@@ -1,0 +1,12 @@
+{% if student %}
+<div id="student-data-bridge" hx-swap-oob="true">
+    <script>
+        document.getElementById('student_name').value = "{{ student.full_name }}";
+        document.getElementById('amount').value = "{{ student.monthly_fee }}";
+    </script>
+</div>
+{% else %}
+<div id="student-data-bridge" hx-swap-oob="true">
+    <!-- No matching student -->
+</div>
+{% endif %}

@@ -15,7 +15,8 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Student</th>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
                                 <th>Amount</th>
                                 <th>Date</th>
                                 <th>User</th>
@@ -24,6 +25,9 @@
                         <tbody>
                             {% for payment in payments %}
                             <tr>
+                                <td style="color: var(--text-dim); font-family: monospace;">
+                                    {% if payment.student %}STU-{{ payment.student.id }}{% else %}-{%endif %}
+                                </td>
                                 <td style="min-width: 140px;">{{ payment.student_name }}</td>
                                 <td class="amount-cell">Rs.{{ payment.amount }}</td>
                                 <td>{{ payment.created_at|date:"M d, Y" }}</td>

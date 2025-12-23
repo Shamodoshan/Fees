@@ -11,11 +11,23 @@ def index(request):
 @login_required(login_url='login')
 def add_payment(request):
     if request.method == 'POST':
+        student_id = request.POST.get('student_id')
         student_name = request.POST.get('student_name')
         amount = request.POST.get('amount')
         description = request.POST.get('description')
+        
+        student = None
+        if student_id:
+            try:
+                # Extract numeric ID from STU-XXXX (case insensitive)
+                stu_pk = student_id.upper().replace('STU-', '').lstrip('0')
+                student = Student.objects.get(pk=stu_pk)
+            except (Student.DoesNotExist, ValueError):
+                pass
+
         DraftPayment.objects.create(
             user=request.user,
+            student=student,
             student_name=student_name,
             amount=amount,
             description=description
@@ -26,6 +38,16 @@ def add_payment(request):
             return response
         return redirect('index')
     return render(request, 'add_payment.html')
+
+@login_required(login_url='login')
+def get_student_details(request):
+    stu_id_raw = request.GET.get('student_id', '').upper()
+    stu_id = stu_id_raw.replace('STU-', '').lstrip('0')
+    try:
+        student = Student.objects.get(id=stu_id)
+        return render(request, 'partials/student_details.html', {'student': student})
+    except (Student.DoesNotExist, ValueError):
+        return render(request, 'partials/student_details.html', {'student': None})
 
 @login_required(login_url='login')
 def add_expense(request):
@@ -65,6 +87,18 @@ def approve_payment(request, pk):
         payment = DraftPayment.objects.get(pk=pk)
         payment.status = 'Accepted'
         payment.save()
+        
+        # Increment student's last paid month if linked
+        if payment.student:
+            d = payment.student.last_paid_date
+            # Simple month increment logic: Always normalize to the 1st
+            if d.month == 12:
+                new_date = d.replace(year=d.year + 1, month=1, day=1)
+            else:
+                new_date = d.replace(month=d.month + 1, day=1)
+            payment.student.last_paid_date = new_date
+            payment.student.save()
+            
     return redirect('view_payments')
 
 @login_required(login_url='login')

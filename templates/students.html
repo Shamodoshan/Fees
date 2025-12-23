@@ -21,6 +21,7 @@
                             <th>Student ID</th>
                             <th>Full Name</th>
                             <th>Monthly Fee</th>
+                            <th>Last Paid Month</th>
                             {% if user.is_staff %}<th>Actions</th>{% endif %}
                         </tr>
                     </thead>
@@ -30,6 +31,7 @@
                             <td style="color: var(--text-dim); font-family: monospace;">STU-{{student.id }}</td>
                             <td style="font-weight: 600;">{{ student.full_name }}</td>
                             <td class="amount-cell">Rs.{{ student.monthly_fee }}</td>
+                            <td>{{ student.last_paid_date|date:"F Y" }}</td>
                             {% if user.is_staff %}
                             <td>
                                 <div style="display: flex; gap: 0.5rem;">
@@ -44,7 +46,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if user.is_staff %}4{% else %}3{% endif %}" class="empty-state">No students
+                            <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No students
                                 found.</td>
                         </tr>
                         {% endfor %}
