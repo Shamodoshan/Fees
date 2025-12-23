@@ -87,6 +87,13 @@ def view_expenses(request):
 def approve_payment(request, pk):
     if request.user.is_staff:
         payment = DraftPayment.objects.get(pk=pk)
+        
+        # Check if admin adjusted the amount
+        if request.method == 'POST':
+            adjusted_amount = request.POST.get('adjusted_amount')
+            if adjusted_amount:
+                payment.amount = adjusted_amount
+        
         payment.status = 'Accepted'
         payment.save()
         
