@@ -23,11 +23,11 @@
                         {% for item in report %}
                         <tr>
                             <td style="font-weight: 600;">{{ item.month }}</td>
-                            <td class="amount-cell" style="color: #4ade80;">+${{ item.payments }}</td>
-                            <td class="amount-cell" style="color: #fca5a5;">-${{ item.expenses }}</td>
+                            <td class="amount-cell" style="color: #4ade80;">+Rs.{{ item.payments }}</td>
+                            <td class="amount-cell" style="color: #fca5a5;">-Rs{{ item.expenses }}</td>
                             <td class="amount-cell"
                                 style="color: {% if item.net >= 0 %}var(--accent){% else %}#f87171{% endif %}; font-weight: 800;">
-                                {% if item.net >= 0 %}+{% endif %}${{ item.net }}
+                                {% if item.net >= 0 %}+{% endif %}Rs.{{ item.net }}
                             </td>
                         </tr>
                         {% empty %}

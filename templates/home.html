@@ -8,13 +8,13 @@
         <a href="{% url 'add_payment' %}" class="nav-card">
             <div class="icon-box">💰</div>
             <h2>Add Draft Payment</h2>
-            <p>Record a new draft payment from students.</p>
+            <p>Record a new draft payment.</p>
         </a>
 
         <a href="{% url 'add_expense' %}" class="nav-card">
             <div class="icon-box">📉</div>
             <h2>Add Draft Expense</h2>
-            <p>Log a pending or draft expense for the project.</p>
+            <p>Record a new draft expense.</p>
         </a>
 
         <a href="{% url 'view_payments' %}" class="nav-card">
@@ -39,6 +39,12 @@
             <div class="icon-box">📈</div>
             <h2>Analyze</h2>
             <p>Monthly profit and loss reports.</p>
+        </a>
+
+        <a href="{% url 'view_students' %}" class="nav-card">
+            <div class="icon-box">🎓</div>
+            <h2>Students</h2>
+            <p>Manage student records and fees.</p>
         </a>
     </div>
 </div>

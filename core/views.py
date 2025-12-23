@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .models import DraftPayment, DraftExpense
+from .models import DraftPayment, DraftExpense, Student
 
 from django.contrib.auth.decorators import login_required
 
@@ -170,6 +170,58 @@ def login_view(request):
         else:
             return render(request, 'login.html', {'error': 'Invalid username or password.'})
     return render(request, 'login.html')
+
+@login_required(login_url='login')
+def view_students(request):
+    students = Student.objects.all().order_by('id')
+    return render(request, 'students.html', {'students': students})
+
+@login_required(login_url='login')
+def add_student(request):
+    if not request.user.is_staff:
+        return redirect('view_students')
+    
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        monthly_fee = request.POST.get('monthly_fee')
+        Student.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            monthly_fee=monthly_fee
+        )
+        if request.headers.get('HX-Request'):
+            response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
+            response['HX-Trigger'] = 'showDraftToast'
+            return response
+        return redirect('view_students')
+    
+    return render(request, 'student_form.html', {'title': 'Add Student', 'is_update': False})
+
+@login_required(login_url='login')
+def update_student(request, pk):
+    if not request.user.is_staff:
+        return redirect('view_students')
+    
+    student = Student.objects.get(pk=pk)
+    if request.method == 'POST':
+        student.first_name = request.POST.get('first_name')
+        student.last_name = request.POST.get('last_name')
+        student.monthly_fee = request.POST.get('monthly_fee')
+        student.save()
+        if request.headers.get('HX-Request'):
+            response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
+            response['HX-Trigger'] = 'showDraftToast'
+            return response
+        return redirect('view_students')
+    
+    return render(request, 'student_form.html', {'title': 'Update Student', 'student': student, 'is_update': True})
+
+@login_required(login_url='login')
+def delete_student(request, pk):
+    if request.user.is_staff:
+        Student.objects.get(pk=pk).delete()
+    return redirect('view_students')
 
 def logout_view(request):
     logout(request)
