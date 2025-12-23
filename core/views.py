@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect
+import json
+from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from .models import DraftPayment, DraftExpense, Student
@@ -226,7 +228,12 @@ def add_student(request):
         )
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
-            response['HX-Trigger'] = 'showDraftToast'
+            response['HX-Trigger'] = json.dumps({
+                "showToast": {
+                    "message": "Student added",
+                    "type": "success"
+                }
+            })
             return response
         return redirect('view_students')
     
@@ -245,7 +252,12 @@ def update_student(request, pk):
         student.save()
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
-            response['HX-Trigger'] = 'showDraftToast'
+            response['HX-Trigger'] = json.dumps({
+                "showToast": {
+                    "message": "Student updated",
+                    "type": "success"
+                }
+            })
             return response
         return redirect('view_students')
     
@@ -255,6 +267,17 @@ def update_student(request, pk):
 def delete_student(request, pk):
     if request.user.is_staff:
         Student.objects.get(pk=pk).delete()
+    
+    if request.headers.get('HX-Request'):
+        response = HttpResponse("")
+        response['HX-Trigger'] = json.dumps({
+            "showToast": {
+                "message": "Student deleted",
+                "type": "error"
+            }
+        })
+        return response
+        
     return redirect('view_students')
 
 def logout_view(request):

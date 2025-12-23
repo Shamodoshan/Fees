@@ -37,9 +37,11 @@
                                 <div style="display: flex; gap: 0.5rem;">
                                     <a href="{% url 'update_student' student.pk %}" class="btn-sm"
                                         style="background: var(--primary);">Update</a>
-                                    <a href="{% url 'delete_student' student.pk %}" class="btn-sm"
-                                        style="background: var(--error);"
-                                        onclick="return confirm('Are you sure you want to delete this student?')">Delete</a>
+                                    <button hx-post="{% url 'delete_student' student.pk %}" hx-target="closest tr"
+                                        hx-swap="outerHTML swap:400ms" class="btn-sm"
+                                        style="background: var(--error); border: none; cursor: pointer;">
+                                        Delete
+                                    </button>
                                 </div>
                             </td>
                             {% endif %}

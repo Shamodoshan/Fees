@@ -226,6 +226,12 @@
             font-size: 0.9rem;
         }
 
+        .toast-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
         @keyframes toast-in {
             0% {
                 opacity: 0;
@@ -253,6 +259,12 @@
                 transform: translate(-50%, -20px);
             }
         }
+
+        /* HTMX Swapping Animation */
+        .htmx-swapping {
+            opacity: 0;
+            transition: opacity 400ms ease-out;
+        }
     </style>
 </head>
 
@@ -278,10 +290,10 @@
         {% if not request.htmx %}
     </main>
     <script>
-        function showToast(message) {
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = 'toast';
+            toast.className = 'toast' + (type === 'error' ? ' toast-error' : '');
             toast.innerText = message;
             container.appendChild(toast);
 
@@ -293,6 +305,10 @@
 
         document.body.addEventListener('showDraftToast', function (evt) {
             showToast('Draft saved successfully!');
+        });
+
+        document.body.addEventListener('showToast', function (evt) {
+            showToast(evt.detail.message || 'Action completed successfully!', evt.detail.type || 'success');
         });
     </script>
 </body>
