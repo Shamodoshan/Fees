@@ -22,19 +22,32 @@
                     </thead>
                     <tbody>
                         {% for expense in expenses %}
-                        <tr>
+                        <tr id="expense-row-{{ expense.pk }}">
                             <td style="min-width: 140px;">{{ expense.expense_name }}</td>
-                            <td class="amount-cell expense-amt">Rs.{{ expense.amount }}</td>
+                            <td class="amount-cell expense-amt" id="amount-display-{{ expense.pk }}">Rs.{{ expense.amount }}</td>
                             <td>{{ expense.created_at|date:"M d, Y" }}</td>
                             <td style="color: var(--text-dim); font-size: 0.85rem;">{{expense.user.username}}</td>
                             {% if user.is_staff %}
                             <td>
-                                <div style="display: flex; gap: 0.5rem;">
+                                <div style="display: flex; gap: 0.5rem;" id="action-btns-{{ expense.pk }}">
+                                    <button onclick="showAdjustForm({{ expense.pk }}, {{ expense.amount }})" class="btn-sm"
+                                        style="background: var(--primary);">Adjust</button>
                                     <a href="{% url 'approve_expense' expense.pk %}" class="btn-sm"
                                         style="background: var(--accent);">Accept</a>
                                     <a href="{% url 'decline_expense' expense.pk %}" class="btn-sm"
                                         style="background: var(--error);">Decline</a>
                                 </div>
+                                <form id="adjust-form-{{ expense.pk }}" style="display: none; gap: 0.5rem; align-items: center;" 
+                                      method="POST" action="{% url 'approve_expense' expense.pk %}">
+                                    {% csrf_token %}
+                                    <input type="number" name="adjusted_amount" step="0.01" 
+                                           value="{{ expense.amount }}" required
+                                           style="padding: 0.4rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); 
+                                                  background: var(--card-bg); color: var(--text); width: 100px;">
+                                    <button type="submit" class="btn-sm" style="background: var(--accent);">Save & Accept</button>
+                                    <button type="button" onclick="hideAdjustForm({{ expense.pk }})" class="btn-sm" 
+                                            style="background: var(--text-dim);">Cancel</button>
+                                </form>
                             </td>
                             {% endif %}
                         </tr>
@@ -102,4 +115,16 @@
         font-style: italic;
     }
 </style>
+
+<script>
+function showAdjustForm(expenseId, currentAmount) {
+    document.getElementById('action-btns-' + expenseId).style.display = 'none';
+    document.getElementById('adjust-form-' + expenseId).style.display = 'flex';
+}
+
+function hideAdjustForm(expenseId) {
+    document.getElementById('action-btns-' + expenseId).style.display = 'flex';
+    document.getElementById('adjust-form-' + expenseId).style.display = 'none';
+}
+</script>
 {% endblock %}

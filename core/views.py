@@ -122,6 +122,13 @@ def decline_payment(request, pk):
 def approve_expense(request, pk):
     if request.user.is_staff:
         expense = DraftExpense.objects.get(pk=pk)
+        
+        # Check if admin adjusted the amount
+        if request.method == 'POST':
+            adjusted_amount = request.POST.get('adjusted_amount')
+            if adjusted_amount:
+                expense.amount = adjusted_amount
+        
         expense.status = 'Accepted'
         expense.save()
     return redirect('view_expenses')
