@@ -23,30 +23,33 @@
                     <tbody>
                         {% for expense in expenses %}
                         <tr id="expense-row-{{ expense.pk }}">
-                            <td style="min-width: 140px;">{{ expense.expense_name }}</td>
-                            <td class="amount-cell expense-amt" id="amount-display-{{ expense.pk }}">Rs.{{ expense.amount }}</td>
-                            <td>{{ expense.created_at|date:"M d, Y" }}</td>
-                            <td style="color: var(--text-dim); font-size: 0.85rem;">{{expense.user.username}}</td>
+                            <td data-label="Expense" style="min-width: 140px;">{{ expense.expense_name }}</td>
+                            <td data-label="Amount" class="amount-cell expense-amt"
+                                id="amount-display-{{ expense.pk }}">Rs.{{ expense.amount }}</td>
+                            <td data-label="Date">{{ expense.created_at|date:"M d, Y" }}</td>
+                            <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
+                                {{expense.user.username}}</td>
                             {% if user.is_staff %}
-                            <td>
+                            <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem;" id="action-btns-{{ expense.pk }}">
-                                    <button onclick="showAdjustForm({{ expense.pk }}, {{ expense.amount }})" class="btn-sm"
+                                    <button type="button" class="btn-sm adjust-btn" data-id="{{ expense.pk }}"
                                         style="background: var(--primary);">Adjust</button>
                                     <a href="{% url 'approve_expense' expense.pk %}" class="btn-sm"
                                         style="background: var(--accent);">Accept</a>
                                     <a href="{% url 'decline_expense' expense.pk %}" class="btn-sm"
                                         style="background: var(--error);">Decline</a>
                                 </div>
-                                <form id="adjust-form-{{ expense.pk }}" style="display: none; gap: 0.5rem; align-items: center;" 
-                                      method="POST" action="{% url 'approve_expense' expense.pk %}">
+                                <form id="adjust-form-{{ expense.pk }}"
+                                    style="display: none; gap: 0.5rem; align-items: center;" method="POST"
+                                    action="{% url 'approve_expense' expense.pk %}">
                                     {% csrf_token %}
-                                    <input type="number" name="adjusted_amount" step="0.01" 
-                                           value="{{ expense.amount }}" required
-                                           style="padding: 0.4rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); 
+                                    <input type="number" name="adjusted_amount" step="0.01" value="{{ expense.amount }}"
+                                        required style="padding: 0.4rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); 
                                                   background: var(--card-bg); color: var(--text); width: 100px;">
-                                    <button type="submit" class="btn-sm" style="background: var(--accent);">Save & Accept</button>
-                                    <button type="button" onclick="hideAdjustForm({{ expense.pk }})" class="btn-sm" 
-                                            style="background: var(--text-dim);">Cancel</button>
+                                    <button type="submit" class="btn-sm" style="background: var(--accent);">Save &
+                                        Accept</button>
+                                    <button type="button" class="btn-sm cancel-adjust-btn" data-id="{{ expense.pk }}"
+                                        style="background: var(--text-dim);">Cancel</button>
                                 </form>
                             </td>
                             {% endif %}
@@ -114,17 +117,92 @@
         color: var(--text-dim);
         font-style: italic;
     }
+
+    @media (max-width: 768px) {
+        thead {
+            display: none;
+        }
+
+        tr {
+            display: block;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.2rem;
+        }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: right;
+        }
+
+        td:last-child {
+            border-bottom: none;
+            padding-top: 1rem;
+            justify-content: center;
+        }
+
+        td::before {
+            content: attr(data-label);
+            float: left;
+            font-weight: 600;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        /* Mobile Action Buttons Fix */
+        td[data-label="Actions"] {
+            display: block;
+            width: 100%;
+        }
+
+        td[data-label="Actions"]::before {
+            margin-bottom: 0.5rem;
+        }
+
+        td[data-label="Actions"]>div {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        td[data-label="Actions"] .btn-sm {
+            width: 100%;
+            text-align: center;
+            padding: 0.6rem 0.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
 </style>
 
 <script>
-function showAdjustForm(expenseId, currentAmount) {
-    document.getElementById('action-btns-' + expenseId).style.display = 'none';
-    document.getElementById('adjust-form-' + expenseId).style.display = 'flex';
-}
+    document.addEventListener('DOMContentLoaded', function () {
+        // Handle Adjust Button Click
+        document.querySelectorAll('.adjust-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                document.getElementById('action-btns-' + id).style.display = 'none';
+                document.getElementById('adjust-form-' + id).style.display = 'flex';
+            });
+        });
 
-function hideAdjustForm(expenseId) {
-    document.getElementById('action-btns-' + expenseId).style.display = 'flex';
-    document.getElementById('adjust-form-' + expenseId).style.display = 'none';
-}
+        // Handle Cancel Button Click
+        document.querySelectorAll('.cancel-adjust-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.getAttribute('data-id');
+                document.getElementById('action-btns-' + id).style.display = 'flex';
+                document.getElementById('adjust-form-' + id).style.display = 'none';
+            });
+        });
+    });
 </script>
 {% endblock %}

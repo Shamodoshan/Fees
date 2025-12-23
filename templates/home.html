@@ -50,65 +50,147 @@
 </div>
 
 <style>
+    .home-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
     .nav-grid {
         display: grid;
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 640px) {
         .nav-grid {
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 2rem;
         }
     }
 
     .nav-card {
         background: var(--card-bg);
-        padding: 1.5rem;
-        border-radius: 20px;
+        padding: 2rem;
+        border-radius: 24px;
         text-decoration: none;
         color: white;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid var(--card-border);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         display: flex;
         flex-direction: column;
         align-items: center;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+        /* Staggered Animation Setup */
+        opacity: 0;
+        animation: cardEnter 0.6s ease-out forwards;
     }
 
-    @media (min-width: 768px) {
-        .nav-card {
-            padding: 2.5rem;
+    /* Stagger delays */
+    .nav-card:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+
+    .nav-card:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .nav-card:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    .nav-card:nth-child(4) {
+        animation-delay: 0.4s;
+    }
+
+    .nav-card:nth-child(5) {
+        animation-delay: 0.5s;
+    }
+
+    .nav-card:nth-child(6) {
+        animation-delay: 0.6s;
+    }
+
+    .nav-card:nth-child(7) {
+        animation-delay: 0.7s;
+    }
+
+    @keyframes cardEnter {
+        from {
+            opacity: 0;
+            transform: translateY(30px) scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
     }
 
+    /* Gradient Border Effect on Hover */
+    .nav-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 24px;
+        padding: 2px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary), var(--primary));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
     .nav-card:hover {
-        transform: translateY(-10px);
-        background: rgba(255, 255, 255, 0.05);
-        border-color: var(--primary);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        background: rgba(30, 41, 59, 0.8);
+    }
+
+    .nav-card:hover::before {
+        opacity: 1;
     }
 
     .icon-box {
-        font-size: 3rem;
+        font-size: 3.5rem;
         margin-bottom: 1.5rem;
-        background: rgba(99, 102, 241, 0.1);
-        width: 80px;
-        height: 80px;
+        width: 100px;
+        height: 100px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 16px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.5s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .nav-card:hover .icon-box {
+        transform: rotateY(10deg) rotateX(10deg) scale(1.1);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(52, 211, 153, 0.2));
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
     }
 
     .nav-card h2 {
-        font-size: 1.5rem;
-        margin-bottom: 0.8rem;
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #fff, #cbd5e1);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     .nav-card p {
         color: var(--text-dim);
+        font-size: 0.95rem;
+        line-height: 1.5;
     }
 </style>
 {% endblock %}
