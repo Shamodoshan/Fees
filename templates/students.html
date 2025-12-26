@@ -18,8 +18,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Student ID</th>
-                            <th>Full Name</th>
+                            <th>Name</th>
                             <th>Monthly Fee</th>
                             <th>Last Paid Month</th>
                             {% if user.is_staff %}<th>Actions</th>{% endif %}
@@ -28,19 +27,15 @@
                     <tbody>
                         {% for student in students %}
                         <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                            <td data-label="Student ID" style="color: var(--text-dim); font-family: monospace;">
-                                STU-{{student.id }}</td>
-                            <td data-label="Full Name" style="font-weight: 600;">{{ student.full_name }}</td>
+                            <td data-label="Name" style="font-weight: 600;">{{ student.name }}</td>
                             <td data-label="Monthly Fee" class="amount-cell">Rs.{{ student.monthly_fee }}</td>
                             <td data-label="Last Paid Month">{{ student.last_paid_date|date:"F Y" }}</td>
                             {% if user.is_staff %}
                             <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                    <a href="{% url 'update_student' student.pk %}" class="btn-sm"
-                                        style="background: var(--primary);">Update</a>
+                                    <a href="{% url 'update_student' student.pk %}" class="btn-action btn-action-primary">Update</a>
                                     <button hx-post="{% url 'delete_student' student.pk %}" hx-target="closest tr"
-                                        hx-swap="outerHTML swap:400ms" class="btn-sm"
-                                        style="background: var(--error); border: none; cursor: pointer;">
+                                        hx-swap="outerHTML swap:400ms" class="btn-action btn-action-danger">
                                         Delete
                                     </button>
                                 </div>
@@ -49,7 +44,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No students
+                            <td colspan="{% if user.is_staff %}4{% else %}3{% endif %}" class="empty-state">No students
                                 found.</td>
                         </tr>
                         {% endfor %}
@@ -107,6 +102,60 @@
         font-style: italic;
     }
 
+    .btn-action {
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .btn-action-primary {
+        background: rgba(129, 140, 248, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    .btn-action-primary:hover {
+        background: rgba(129, 140, 248, 0.3);
+        border-color: rgba(129, 140, 248, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
+    }
+
+    .btn-action-danger {
+        background: rgba(244, 63, 94, 0.2);
+        color: #f43f5e;
+        border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+
+    .btn-action-danger:hover {
+        background: rgba(244, 63, 94, 0.3);
+        border-color: rgba(244, 63, 94, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+    }
+
+    .btn-action-success {
+        background: rgba(52, 211, 153, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .btn-action-success:hover {
+        background: rgba(52, 211, 153, 0.3);
+        border-color: rgba(52, 211, 153, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+    }
+
     @media (max-width: 768px) {
         thead {
             display: none;
@@ -146,9 +195,15 @@
             justify-content: stretch;
         }
 
-        td[data-label="Actions"] .btn-sm {
-            flex: 1;
-            text-align: center;
+        td[data-label="Actions"]>div {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        td[data-label="Actions"] .btn-action {
+            width: 100%;
         }
 
         td::before {

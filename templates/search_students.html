@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Search Students</h1>
+        <a href="/" style="color: var(--primary); text-decoration: none;">&larr; Back to Home</a>
+    </div>
+
+    <div class="search-container" style="margin-bottom: 2rem;">
+        <input type="text" id="search_name" name="search_name" placeholder="Enter student name..." 
+            hx-get="{% url 'search_student_details' %}" 
+            hx-trigger="keyup changed delay:500ms" 
+            hx-target="#search-results"
+            style="width: 100%; padding: 0.8rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    background: var(--card-bg); color: var(--text); font-size: 1rem;">
+    </div>
+
+    <div id="search-results">
+        <!-- Search results will be displayed here -->
+    </div>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .student-details {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        color: var(--text-dim);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .detail-value {
+        color: var(--text);
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .amount-value {
+        color: var(--accent);
+    }
+
+    .no-results {
+        text-align: center;
+        color: var(--text-dim);
+        padding: 2rem;
+        font-style: italic;
+    }
+</style>
+{% endblock %}

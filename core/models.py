@@ -40,15 +40,10 @@ class DraftExpense(models.Model):
         return f"Expense: {self.expense_name} - {self.amount} ({self.status})"
 
 class Student(models.Model):
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2)
     last_paid_date = models.DateField(default=get_first_of_month)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-    
-    @property
-    def full_name(self):
-        return f"{self.first_name} {self.last_name}"
+        return self.name

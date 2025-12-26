@@ -14,15 +14,9 @@
         hx-target="#main-content" hx-push-url="true">
         {% csrf_token %}
         <div class="form-group">
-            <label for="first_name">First Name</label>
-            <input type="text" id="first_name" name="first_name" required placeholder="John"
-                value="{% if is_update %}{{ student.first_name }}{% endif %}">
-        </div>
-
-        <div class="form-group">
-            <label for="last_name">Last Name</label>
-            <input type="text" id="last_name" name="last_name" required placeholder="Doe"
-                value="{% if is_update %}{{ student.last_name }}{% endif %}">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required placeholder="John Doe"
+                value="{% if is_update %}{{ student.name }}{% endif %}">
         </div>
 
         <div class="form-group">

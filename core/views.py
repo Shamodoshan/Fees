@@ -7,6 +7,7 @@ from .models import DraftPayment, DraftExpense, Student
 
 from django.contrib.auth.decorators import login_required
 
+@login_required(login_url='login')
 def index(request):
     return render(request, 'home.html')
 
@@ -43,10 +44,9 @@ def add_payment(request):
 
 @login_required(login_url='login')
 def get_student_details(request):
-    stu_id_raw = request.GET.get('student_id', '').upper()
-    stu_id = stu_id_raw.replace('STU-', '').lstrip('0')
+    student_name = request.GET.get('student_name', '').strip()
     try:
-        student = Student.objects.get(id=stu_id)
+        student = Student.objects.get(name=student_name)
         return render(request, 'partials/student_details.html', {'student': student})
     except (Student.DoesNotExist, ValueError):
         return render(request, 'partials/student_details.html', {'student': None})
@@ -70,12 +70,14 @@ def add_expense(request):
         return redirect('index')
     return render(request, 'add_expense.html')
 
+@login_required(login_url='login')
 def view_payments(request):
     payments = DraftPayment.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_payments.html', {
         'payments': payments
     })
 
+@login_required(login_url='login')
 def view_expenses(request):
     expenses = DraftExpense.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_expenses.html', {
@@ -150,12 +152,14 @@ def view_confirmed(request):
         'expenses': expenses
     })
 
+@login_required(login_url='login')
 def view_confirmed_payments(request):
     payments = DraftPayment.objects.filter(status='Accepted').order_by('-created_at')
     return render(request, 'confirmed_payments.html', {
         'payments': payments
     })
 
+@login_required(login_url='login')
 def view_confirmed_expenses(request):
     expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_at')
     return render(request, 'confirmed_expenses.html', {
@@ -244,12 +248,10 @@ def add_student(request):
         return redirect('view_students')
     
     if request.method == 'POST':
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
+        name = request.POST.get('name')
         monthly_fee = request.POST.get('monthly_fee')
         Student.objects.create(
-            first_name=first_name,
-            last_name=last_name,
+            name=name,
             monthly_fee=monthly_fee
         )
         if request.headers.get('HX-Request'):
@@ -272,8 +274,7 @@ def update_student(request, pk):
     
     student = Student.objects.get(pk=pk)
     if request.method == 'POST':
-        student.first_name = request.POST.get('first_name')
-        student.last_name = request.POST.get('last_name')
+        student.name = request.POST.get('name')
         student.monthly_fee = request.POST.get('monthly_fee')
         student.save()
         if request.headers.get('HX-Request'):
@@ -305,6 +306,26 @@ def delete_student(request, pk):
         return response
         
     return redirect('view_students')
+
+@login_required(login_url='login')
+def search_students(request):
+    return render(request, 'search_students.html')
+
+@login_required(login_url='login')
+def search_student_details(request):
+    search_query = request.GET.get('search_name', '').strip()
+    student = None
+    
+    if search_query:
+        try:
+            student = Student.objects.get(name=search_query)
+        except Student.DoesNotExist:
+            pass
+    
+    return render(request, 'partials/search_student_results.html', {
+        'student': student,
+        'search_query': search_query
+    })
 
 def logout_view(request):
     logout(request)

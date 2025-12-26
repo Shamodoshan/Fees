@@ -10,17 +10,14 @@
     <form hx-post="{% url 'add_payment' %}" hx-target="#main-content" hx-push-url="true"
         hx-on::after-request="if(event.detail.successful && event.detail.elt === this) this.reset()">
         <div class="form-group">
-            <label for="student_id">Student ID (e.g. STU-0001)</label>
-            <input type="text" id="student_id" name="student_id" hx-get="{% url 'get_student_details' %}"
-                hx-trigger="keyup changed delay:500ms" hx-target="#student-data-bridge" placeholder="STU-0001">
+            <label for="student_name">Student Name</label>
+            <input type="text" id="student_name" name="student_name" required placeholder="John Doe" 
+                hx-get="{% url 'get_student_details' %}" hx-trigger="keyup changed delay:500ms" hx-target="#student-data-bridge">
         </div>
+
+        <input type="hidden" id="student_id" name="student_id">
 
         <div id="student-data-bridge"></div>
-
-        <div class="form-group">
-            <label for="student_name">Student Name</label>
-            <input type="text" id="student_name" name="student_name" required placeholder="John Doe">
-        </div>
 
         <div class="form-group">
             <label for="amount">Amount</label>

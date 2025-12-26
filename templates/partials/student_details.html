@@ -1,8 +1,9 @@
 {% if student %}
 <div id="student-data-bridge" hx-swap-oob="true">
     <script>
-        document.getElementById('student_name').value = "{{ student.full_name }}";
+        document.getElementById('student_name').value = "{{ student.name }}";
         document.getElementById('amount').value = "{{ student.monthly_fee }}";
+        document.getElementById('student_id').value = "{{ student.id }}";
     </script>
 </div>
 {% else %}
