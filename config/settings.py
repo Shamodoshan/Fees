@@ -81,20 +81,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-database_url = os.getenv("DATABASE_URL", "")
-
-# Normalise the database URL to a text string and fail fast if missing
-if isinstance(database_url, bytes):
-    database_url = database_url.decode()
-if not database_url:
-    raise ValueError("DATABASE_URL environment variable is not set")
-
-tmpPostgres = urlparse(database_url)
+tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': tmpPostgres.path.lstrip('/'),
+        'NAME': tmpPostgres.path.replace('/', ''),
         'USER': tmpPostgres.username,
         'PASSWORD': tmpPostgres.password,
         'HOST': tmpPostgres.hostname,

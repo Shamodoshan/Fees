@@ -1,0 +1,24 @@
+{% if student %}
+<div class="student-details">
+    <div class="detail-row">
+        <span class="detail-label">Name</span>
+        <span class="detail-value">{{ student.name }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Monthly Fee</span>
+        <span class="detail-value amount-value">Rs.{{ student.monthly_fee }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Last Paid Month</span>
+        <span class="detail-value">{{ student.last_paid_date|date:"F Y" }}</span>
+    </div>
+</div>
+{% elif search_query %}
+<div class="no-results">
+    No student found with the name "{{ search_query }}"
+</div>
+{% else %}
+<div class="no-results">
+    Start typing a student's name to search...
+</div>
+{% endif %}
