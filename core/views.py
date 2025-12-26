@@ -150,6 +150,18 @@ def view_confirmed(request):
         'expenses': expenses
     })
 
+def view_confirmed_payments(request):
+    payments = DraftPayment.objects.filter(status='Accepted').order_by('-created_at')
+    return render(request, 'confirmed_payments.html', {
+        'payments': payments
+    })
+
+def view_confirmed_expenses(request):
+    expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_at')
+    return render(request, 'confirmed_expenses.html', {
+        'expenses': expenses
+    })
+
 from django.db.models import Sum, functions
 from datetime import datetime
 

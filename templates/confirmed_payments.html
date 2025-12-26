@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="view-container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Confirmed Payments</h1>
+        <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Home</a>
+    </div>
+
+    <div class="tables-section">
+        <section class="records-block">
+            <div class="table-container">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Student Name</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td data-label="Student ID" style="color: var(--text-dim); font-family: monospace;">
+                                    {% if payment.student %}STU-{{ payment.student.id }}{% else %}-{%endif %}
+                                </td>
+                                <td data-label="Student Name" style="min-width: 140px;">{{ payment.student_name }}</td>
+                                <td data-label="Amount" class="amount-cell">Rs.{{ payment.amount }}</td>
+                                <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
+                                <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
+                                    {{payment.user.username}}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-state">No confirmed payments found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    th {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1rem;
+        color: var(--text-dim);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    .amount-cell {
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem !important;
+        color: var(--text-dim);
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        thead {
+            display: none;
+        }
+
+        tr {
+            display: block;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 1.2rem;
+        }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: right;
+        }
+
+        td:last-child {
+            border-bottom: none;
+        }
+
+        td::before {
+            content: attr(data-label);
+            float: left;
+            font-weight: 600;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+    }
+</style>
+{% endblock %}
