@@ -3,7 +3,7 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .models import DraftPayment, DraftExpense, Student
+from .models import Payment, Expense, Student
 
 from django.contrib.auth.decorators import login_required
 
@@ -17,6 +17,8 @@ def add_payment(request):
         student_id = request.POST.get('student_id')
         student_name = request.POST.get('student_name')
         amount = request.POST.get('amount')
+        year = request.POST.get('year')
+        month = request.POST.get('month')
         description = request.POST.get('description')
         
         student = None
@@ -28,11 +30,13 @@ def add_payment(request):
             except (Student.DoesNotExist, ValueError):
                 pass
 
-        DraftPayment.objects.create(
+        Payment.objects.create(
             user=request.user,
             student=student,
             student_name=student_name,
             amount=amount,
+            year=year,
+            month=month,
             description=description
         )
         if request.headers.get('HX-Request'):
@@ -46,9 +50,10 @@ def add_payment(request):
 def get_student_details(request):
     student_name = request.GET.get('student_name', '').strip()
     try:
-        student = Student.objects.get(name=student_name)
+        # Search by name
+        student = Student.objects.filter(name__icontains=student_name).first()
         return render(request, 'partials/student_details.html', {'student': student})
-    except (Student.DoesNotExist, ValueError):
+    except (ValueError):
         return render(request, 'partials/student_details.html', {'student': None})
 
 @login_required(login_url='login')
@@ -57,7 +62,7 @@ def add_expense(request):
         expense_name = request.POST.get('expense_name')
         amount = request.POST.get('amount')
         description = request.POST.get('description')
-        DraftExpense.objects.create(
+        Expense.objects.create(
             user=request.user,
             expense_name=expense_name,
             amount=amount,
@@ -72,14 +77,14 @@ def add_expense(request):
 
 @login_required(login_url='login')
 def view_payments(request):
-    payments = DraftPayment.objects.filter(status='Pending').order_by('-created_at')
+    payments = Payment.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_payments.html', {
         'payments': payments
     })
 
 @login_required(login_url='login')
 def view_expenses(request):
-    expenses = DraftExpense.objects.filter(status='Pending').order_by('-created_at')
+    expenses = Expense.objects.filter(status='Pending').order_by('-created_at')
     return render(request, 'view_expenses.html', {
         'expenses': expenses
     })
@@ -88,7 +93,7 @@ def view_expenses(request):
 @login_required(login_url='login')
 def approve_payment(request, pk):
     if request.user.is_staff:
-        payment = DraftPayment.objects.get(pk=pk)
+        payment = Payment.objects.get(pk=pk)
         
         # Check if admin adjusted the amount
         if request.method == 'POST':
@@ -115,7 +120,7 @@ def approve_payment(request, pk):
 @login_required(login_url='login')
 def decline_payment(request, pk):
     if request.user.is_staff:
-        payment = DraftPayment.objects.get(pk=pk)
+        payment = Payment.objects.get(pk=pk)
         payment.status = 'Declined'
         payment.save()
     return redirect('view_payments')
@@ -123,7 +128,7 @@ def decline_payment(request, pk):
 @login_required(login_url='login')
 def approve_expense(request, pk):
     if request.user.is_staff:
-        expense = DraftExpense.objects.get(pk=pk)
+        expense = Expense.objects.get(pk=pk)
         
         # Check if admin adjusted the amount
         if request.method == 'POST':
@@ -138,15 +143,15 @@ def approve_expense(request, pk):
 @login_required(login_url='login')
 def decline_expense(request, pk):
     if request.user.is_staff:
-        expense = DraftExpense.objects.get(pk=pk)
+        expense = Expense.objects.get(pk=pk)
         expense.status = 'Declined'
         expense.save()
     return redirect('view_expenses')
 
 @login_required(login_url='login')
 def view_confirmed(request):
-    payments = DraftPayment.objects.filter(status='Accepted').order_by('-created_at')
-    expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_at')
+    payments = Payment.objects.filter(status='Accepted').order_by('-created_at')
+    expenses = Expense.objects.filter(status='Accepted').order_by('-created_at')
     return render(request, 'confirmed_transactions.html', {
         'payments': payments,
         'expenses': expenses
@@ -154,14 +159,14 @@ def view_confirmed(request):
 
 @login_required(login_url='login')
 def view_confirmed_payments(request):
-    payments = DraftPayment.objects.filter(status='Accepted').order_by('-created_at')
+    payments = Payment.objects.filter(status='Accepted').order_by('-created_at')
     return render(request, 'confirmed_payments.html', {
         'payments': payments
     })
 
 @login_required(login_url='login')
 def view_confirmed_expenses(request):
-    expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_at')
+    expenses = Expense.objects.filter(status='Accepted').order_by('-created_at')
     return render(request, 'confirmed_expenses.html', {
         'expenses': expenses
     })
@@ -172,12 +177,12 @@ from datetime import datetime
 @login_required(login_url='login')
 def analyze_view(request):
     # Aggregate payments by month and year
-    payment_stats = DraftPayment.objects.filter(status='Accepted').annotate(
+    payment_stats = Payment.objects.filter(status='Accepted').annotate(
         month=functions.TruncMonth('created_at')
     ).values('month').annotate(total=Sum('amount')).order_by('-month')
 
     # Aggregate expenses by month and year
-    expense_stats = DraftExpense.objects.filter(status='Accepted').annotate(
+    expense_stats = Expense.objects.filter(status='Accepted').annotate(
         month=functions.TruncMonth('created_at')
     ).values('month').annotate(total=Sum('amount')).order_by('-month')
 
@@ -248,11 +253,11 @@ def add_student(request):
         return redirect('view_students')
     
     if request.method == 'POST':
-        name = request.POST.get('name')
-        monthly_fee = request.POST.get('monthly_fee')
+        name = request.POST.get('name', '')
+        fixed_fee = request.POST.get('monthly_fee')
         Student.objects.create(
             name=name,
-            monthly_fee=monthly_fee
+            fixed_fee=fixed_fee
         )
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
@@ -274,8 +279,8 @@ def update_student(request, pk):
     
     student = Student.objects.get(pk=pk)
     if request.method == 'POST':
-        student.name = request.POST.get('name')
-        student.monthly_fee = request.POST.get('monthly_fee')
+        student.name = request.POST.get('name', '')
+        student.fixed_fee = request.POST.get('monthly_fee')
         student.save()
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('id')})
@@ -318,8 +323,8 @@ def search_student_details(request):
     
     if search_query:
         try:
-            student = Student.objects.get(name=search_query)
-        except Student.DoesNotExist:
+            student = Student.objects.filter(name__icontains=search_query).first()
+        except Exception:
             pass
     
     return render(request, 'partials/search_student_results.html', {

@@ -3,7 +3,7 @@
 {% block content %}
 <div class="view-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h1>Draft Payments</h1>
+        <h1>Pending Payments</h1>
         <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Home</a>
     </div>
 
@@ -16,6 +16,7 @@
                             <th>Student Name</th>
                             <th>Monthly Fee</th>
                             <th>Payment Amount</th>
+                            <th>For Period</th>
                             <th>Date</th>
                             <th>User</th>
                             {% if user.is_staff %}<th>Actions</th>{% endif %}
@@ -29,16 +30,25 @@
                                 {% if payment.student %}Rs.{{ payment.student.monthly_fee }}{% else %}-{% endif %}
                             </td>
                             <td data-label="Payment Amount" class="amount-cell" id="amount-display-{{ payment.pk }}">
-                                Rs.{{ payment.amount }}</td>
+                                Rs.{{ payment.amount }}
+                                {% if payment.status == 'Partial' %}
+                                <span
+                                    style="font-size: 0.7rem; background: rgba(255, 166, 0, 0.2); color: orange; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Partial</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="For Period">{{ payment.month }}/{{ payment.year }}</td>
                             <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
                             <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                 {{payment.user.username}}</td>
                             {% if user.is_staff %}
                             <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem;" id="action-btns-{{ payment.pk }}">
-                                    <button type="button" class="btn-action btn-action-primary adjust-btn" data-id="{{ payment.pk }}">Adjust</button>
-                                    <a href="{% url 'approve_payment' payment.pk %}" class="btn-action btn-action-success">Accept</a>
-                                    <a href="{% url 'decline_payment' payment.pk %}" class="btn-action btn-action-danger">Decline</a>
+                                    <button type="button" class="btn-action btn-action-primary adjust-btn"
+                                        data-id="{{ payment.pk }}">Adjust</button>
+                                    <a href="{% url 'approve_payment' payment.pk %}"
+                                        class="btn-action btn-action-success">Accept</a>
+                                    <a href="{% url 'decline_payment' payment.pk %}"
+                                        class="btn-action btn-action-danger">Decline</a>
                                 </div>
                                 <form id="adjust-form-{{ payment.pk }}"
                                     style="display: none; gap: 0.5rem; align-items: center;" method="POST"
@@ -48,14 +58,15 @@
                                         required style="padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
                                                   background: var(--card-bg); color: var(--text); width: 120px;">
                                     <button type="submit" class="btn-action btn-action-success">Save & Accept</button>
-                                    <button type="button" class="btn-action btn-action-secondary cancel-adjust-btn" data-id="{{ payment.pk }}">Cancel</button>
+                                    <button type="button" class="btn-action btn-action-secondary cancel-adjust-btn"
+                                        data-id="{{ payment.pk }}">Cancel</button>
                                 </form>
                             </td>
                             {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if user.is_staff %}6{% else %}5{% endif %}" class="empty-state">No draft
+                            <td colspan="{% if user.is_staff %}7{% else %}6{% endif %}" class="empty-state">No pending
                                 payments found.</td>
                         </tr>
                         {% endfor %}
@@ -66,251 +77,109 @@
     </section>
 </div>
 
-<style>
-    .btn-action {
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-    }
 
-    .btn-action-primary {
-        background: rgba(129, 140, 248, 0.2);
-        color: #818cf8;
-        border: 1px solid rgba(129, 140, 248, 0.3);
-    }
 
-    .btn-action-primary:hover {
-        background: rgba(129, 140, 248, 0.3);
-        border-color: rgba(129, 140, 248, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
-    }
+table {
+width: 100%;
+border-collapse: collapse;
+text-align: left;
+}
 
-    .btn-action-success {
-        background: rgba(52, 211, 153, 0.2);
-        color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
-    }
+th {
+background: rgba(255, 255, 255, 0.05);
+padding: 1rem;
+color: var(--text-dim);
+font-weight: 600;
+text-transform: uppercase;
+font-size: 0.8rem;
+letter-spacing: 1px;
+}
 
-    .btn-action-success:hover {
-        background: rgba(52, 211, 153, 0.3);
-        border-color: rgba(52, 211, 153, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
-    }
+td {
+padding: 1rem;
+border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-    .btn-action-danger {
-        background: rgba(244, 63, 94, 0.2);
-        color: #f43f5e;
-        border: 1px solid rgba(244, 63, 94, 0.3);
-    }
+tr:last-child td {
+border-bottom: none;
+}
 
-    .btn-action-danger:hover {
-        background: rgba(244, 63, 94, 0.3);
-        border-color: rgba(244, 63, 94, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
-    }
+.amount-cell {
+font-weight: 700;
+color: var(--accent);
+}
 
-    .btn-action-secondary {
-        background: rgba(148, 163, 184, 0.2);
-        color: #94a3b8;
-        border: 1px solid rgba(148, 163, 184, 0.3);
-    }
+.empty-state {
+text-align: center;
+padding: 3rem !important;
+color: var(--text-dim);
+font-style: italic;
+}
 
-    .btn-action-secondary:hover {
-        background: rgba(148, 163, 184, 0.3);
-        border-color: rgba(148, 163, 184, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
-    }
+@media (max-width: 768px) {
+thead {
+display: none;
+}
 
-<style>
-    .btn-action {
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-    }
+tr {
+display: block;
+margin-bottom: 1rem;
+background: rgba(255, 255, 255, 0.02);
+border: 1px solid rgba(255, 255, 255, 0.05);
+border-radius: 16px;
+padding: 1.2rem;
+}
 
-    .btn-action-primary {
-        background: rgba(129, 140, 248, 0.2);
-        color: #818cf8;
-        border: 1px solid rgba(129, 140, 248, 0.3);
-    }
+td {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 0.6rem 0;
+border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+text-align: right;
+}
 
-    .btn-action-primary:hover {
-        background: rgba(129, 140, 248, 0.3);
-        border-color: rgba(129, 140, 248, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
-    }
+td:last-child {
+border-bottom: none;
+padding-top: 1rem;
+justify-content: center;
+}
 
-    .btn-action-success {
-        background: rgba(52, 211, 153, 0.2);
-        color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
-    }
+td::before {
+content: attr(data-label);
+float: left;
+font-weight: 600;
+color: var(--text-dim);
+font-size: 0.9rem;
+text-transform: uppercase;
+}
 
-    .btn-action-success:hover {
-        background: rgba(52, 211, 153, 0.3);
-        border-color: rgba(52, 211, 153, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
-    }
+/* Mobile Action Buttons Fix */
+td[data-label="Actions"] {
+display: block;
+width: 100%;
+}
 
-    .btn-action-danger {
-        background: rgba(244, 63, 94, 0.2);
-        color: #f43f5e;
-        border: 1px solid rgba(244, 63, 94, 0.3);
-    }
+td[data-label="Actions"]::before {
+margin-bottom: 0.5rem;
+}
 
-    .btn-action-danger:hover {
-        background: rgba(244, 63, 94, 0.3);
-        border-color: rgba(244, 63, 94, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
-    }
+td[data-label="Actions"]>div {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 0.5rem;
+width: 100%;
+}
 
-    .btn-action-secondary {
-        background: rgba(148, 163, 184, 0.2);
-        color: #94a3b8;
-        border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    .btn-action-secondary:hover {
-        background: rgba(148, 163, 184, 0.3);
-        border-color: rgba(148, 163, 184, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
-    }
-    .table-container {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        background: var(--card-bg);
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-
-    th {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 1rem;
-        color: var(--text-dim);
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 1px;
-    }
-
-    td {
-        padding: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    tr:last-child td {
-        border-bottom: none;
-    }
-
-    .amount-cell {
-        font-weight: 700;
-        color: var(--accent);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem !important;
-        color: var(--text-dim);
-        font-style: italic;
-    }
-
-    @media (max-width: 768px) {
-        thead {
-            display: none;
-        }
-
-        tr {
-            display: block;
-            margin-bottom: 1rem;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 1.2rem;
-        }
-
-        td {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: right;
-        }
-
-        td:last-child {
-            border-bottom: none;
-            padding-top: 1rem;
-            justify-content: center;
-        }
-
-        td::before {
-            content: attr(data-label);
-            float: left;
-            font-weight: 600;
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        /* Mobile Action Buttons Fix */
-        td[data-label="Actions"] {
-            display: block;
-            width: 100%;
-        }
-
-        td[data-label="Actions"]::before {
-            margin-bottom: 0.5rem;
-        }
-
-        td[data-label="Actions"]>div {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            width: 100%;
-        }
-
-        td[data-label="Actions"] .btn-sm {
-            width: 100%;
-            text-align: center;
-            padding: 0.6rem 0.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-    }
+td[data-label="Actions"] .btn-sm {
+width: 100%;
+text-align: center;
+padding: 0.6rem 0.2rem;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+}
 </style>
 
 <script>

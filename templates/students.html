@@ -28,12 +28,13 @@
                         {% for student in students %}
                         <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                             <td data-label="Name" style="font-weight: 600;">{{ student.name }}</td>
-                            <td data-label="Monthly Fee" class="amount-cell">Rs.{{ student.monthly_fee }}</td>
+                            <td data-label="Monthly Fee" class="amount-cell">Rs.{{ student.fixed_fee }}</td>
                             <td data-label="Last Paid Month">{{ student.last_paid_date|date:"F Y" }}</td>
                             {% if user.is_staff %}
                             <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                    <a href="{% url 'update_student' student.pk %}" class="btn-action btn-action-primary">Update</a>
+                                    <a href="{% url 'update_student' student.pk %}"
+                                        class="btn-action btn-action-primary">Update</a>
                                     <button hx-post="{% url 'delete_student' student.pk %}" hx-target="closest tr"
                                         hx-swap="outerHTML swap:400ms" class="btn-action btn-action-danger">
                                         Delete

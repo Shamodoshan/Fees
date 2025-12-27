@@ -22,7 +22,7 @@
         <div class="form-group">
             <label for="monthly_fee">Monthly Fee (Rs.)</label>
             <input type="number" step="0.01" id="monthly_fee" name="monthly_fee" required placeholder="0.00"
-                value="{% if is_update %}{{ student.monthly_fee }}{% endif %}">
+                value="{% if is_update %}{{ student.fixed_fee }}{% endif %}">
         </div>
 
         <button type="submit" class="btn-submit">

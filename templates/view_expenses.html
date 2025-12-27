@@ -3,7 +3,7 @@
 {% block content %}
 <div class="view-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <h1>Draft Expenses</h1>
+        <h1>Pending Expenses</h1>
         <a href="/" style="color: var(--primary); text-decoration: none; font-weight: 600;">Home</a>
     </div>
 
@@ -32,9 +32,12 @@
                             {% if user.is_staff %}
                             <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem;" id="action-btns-{{ expense.pk }}">
-                                    <button type="button" class="btn-action btn-action-primary adjust-btn" data-id="{{ expense.pk }}">Adjust</button>
-                                    <a href="{% url 'approve_expense' expense.pk %}" class="btn-action btn-action-success">Accept</a>
-                                    <a href="{% url 'decline_expense' expense.pk %}" class="btn-action btn-action-danger">Decline</a>
+                                    <button type="button" class="btn-action btn-action-primary adjust-btn"
+                                        data-id="{{ expense.pk }}">Adjust</button>
+                                    <a href="{% url 'approve_expense' expense.pk %}"
+                                        class="btn-action btn-action-success">Accept</a>
+                                    <a href="{% url 'decline_expense' expense.pk %}"
+                                        class="btn-action btn-action-danger">Decline</a>
                                 </div>
                                 <form id="adjust-form-{{ expense.pk }}"
                                     style="display: none; gap: 0.5rem; align-items: center;" method="POST"
@@ -44,14 +47,15 @@
                                         required style="padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
                                                   background: var(--card-bg); color: var(--text); width: 120px;">
                                     <button type="submit" class="btn-action btn-action-success">Save & Accept</button>
-                                    <button type="button" class="btn-action btn-action-secondary cancel-adjust-btn" data-id="{{ expense.pk }}">Cancel</button>
+                                    <button type="button" class="btn-action btn-action-secondary cancel-adjust-btn"
+                                        data-id="{{ expense.pk }}">Cancel</button>
                                 </form>
                             </td>
                             {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No draft
+                            <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No pending
                                 expenses found.</td>
                         </tr>
                         {% endfor %}
@@ -130,73 +134,7 @@
         box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
     }
 
-<style>
-    .btn-action {
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-decoration: none;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        white-space: nowrap;
-    }
 
-    .btn-action-primary {
-        background: rgba(129, 140, 248, 0.2);
-        color: #818cf8;
-        border: 1px solid rgba(129, 140, 248, 0.3);
-    }
-
-    .btn-action-primary:hover {
-        background: rgba(129, 140, 248, 0.3);
-        border-color: rgba(129, 140, 248, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
-    }
-
-    .btn-action-success {
-        background: rgba(52, 211, 153, 0.2);
-        color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-
-    .btn-action-success:hover {
-        background: rgba(52, 211, 153, 0.3);
-        border-color: rgba(52, 211, 153, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
-    }
-
-    .btn-action-danger {
-        background: rgba(244, 63, 94, 0.2);
-        color: #f43f5e;
-        border: 1px solid rgba(244, 63, 94, 0.3);
-    }
-
-    .btn-action-danger:hover {
-        background: rgba(244, 63, 94, 0.3);
-        border-color: rgba(244, 63, 94, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
-    }
-
-    .btn-action-secondary {
-        background: rgba(148, 163, 184, 0.2);
-        color: #94a3b8;
-        border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    .btn-action-secondary:hover {
-        background: rgba(148, 163, 184, 0.3);
-        border-color: rgba(148, 163, 184, 0.5);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
-    }
     .table-container {
         width: 100%;
         overflow-x: auto;

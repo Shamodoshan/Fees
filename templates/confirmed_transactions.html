@@ -18,6 +18,7 @@
                                 <th>Student ID</th>
                                 <th>Student Name</th>
                                 <th>Amount</th>
+                                <th>For Period</th>
                                 <th>Date</th>
                                 <th>User</th>
                             </tr>
@@ -30,6 +31,7 @@
                                 </td>
                                 <td data-label="Student Name" style="min-width: 140px;">{{ payment.student_name }}</td>
                                 <td data-label="Amount" class="amount-cell">Rs.{{ payment.amount }}</td>
+                                <td data-label="For Period">{{ payment.month }}/{{ payment.year }}</td>
                                 <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
                                 <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                     {{payment.user.username}}</td>
