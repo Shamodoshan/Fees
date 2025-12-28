@@ -148,3 +148,43 @@ class Student(models.Model):
     def __str__(self):
         return self.name
 
+
+class HolidayMonth(models.Model):
+    """
+    Holiday months where students don't need to pay fees.
+    """
+    MONTH_CHOICES = [
+        (1, 'January'),
+        (2, 'February'),
+        (3, 'March'),
+        (4, 'April'),
+        (5, 'May'),
+        (6, 'June'),
+        (7, 'July'),
+        (8, 'August'),
+        (9, 'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December'),
+    ]
+
+    year = models.IntegerField()
+    month = models.IntegerField(choices=MONTH_CHOICES)
+    reason = models.TextField(blank=True, help_text="Optional reason for the holiday")
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'core_holidaymonth'
+        unique_together = ['year', 'month']
+        ordering = ['-year', 'month']
+        indexes = [
+            models.Index(fields=['year', 'month']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_month_display()} {self.year}"
+
+    @property
+    def month_name(self):
+        return self.get_month_display()
+

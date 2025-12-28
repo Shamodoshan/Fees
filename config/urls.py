@@ -45,4 +45,6 @@ urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('holidays/', views.manage_holidays, name='manage_holidays'),
+    path('holidays/delete/<int:holiday_id>/', views.delete_holiday, name='delete_holiday'),
 ]

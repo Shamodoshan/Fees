@@ -1,7 +1,24 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Welcome</h2>
-<p>System is ready.</p>
-<button hx-get="/demo" hx-swap="outerHTML">Click me (HTMX Demo)</button>
+<div style="max-width: 800px; margin: 0 auto;">
+    <h2>Welcome</h2>
+    <p>System is ready.</p>
+    <button hx-get="/demo" hx-swap="outerHTML">Click me (HTMX Demo)</button>
+    
+    {% if user.is_staff %}
+    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <h3>Admin Functions</h3>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{% url 'manage_holidays' %}" 
+               style="display: inline-block; padding: 0.8rem 1.2rem; background: rgba(129, 140, 248, 0.2); 
+                      color: #818cf8; text-decoration: none; border-radius: 8px; 
+                      border: 1px solid rgba(129, 140, 248, 0.3); font-weight: 600;
+                      transition: all 0.3s ease;">
+                Manage Holidays
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

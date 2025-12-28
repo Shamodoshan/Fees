@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import models
-from .models import DraftPayment, DraftExpense, Student
+from .models import DraftPayment, DraftExpense, Student, HolidayMonth
 from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
@@ -670,3 +670,46 @@ def student_annual_report(request):
 def logout_view(request):
     logout(request)
     return redirect('index')
+
+@login_required(login_url='login')
+def manage_holidays(request):
+    if not request.user.is_staff:
+        return redirect('index')
+    
+    holidays = HolidayMonth.objects.all().order_by('-year', 'month')
+    current_year = datetime.now().year
+    
+    if request.method == 'POST':
+        month = int(request.POST.get('month'))
+        year = int(request.POST.get('year'))
+        reason = request.POST.get('reason', '').strip()
+        
+        try:
+            holiday = HolidayMonth.objects.create(
+                year=year,
+                month=month,
+                reason=reason
+            )
+        except Exception:
+            pass  # Handle duplicate or other errors
+        
+        return redirect('manage_holidays')
+    
+    return render(request, 'manage_holidays.html', {
+        'holidays': holidays,
+        'current_year': current_year
+    })
+
+@login_required(login_url='login')
+def delete_holiday(request, holiday_id):
+    if not request.user.is_staff:
+        return redirect('index')
+    
+    if request.method == 'POST':
+        try:
+            holiday = HolidayMonth.objects.get(id=holiday_id)
+            holiday.delete()
+        except HolidayMonth.DoesNotExist:
+            pass
+    
+    return redirect('manage_holidays')
