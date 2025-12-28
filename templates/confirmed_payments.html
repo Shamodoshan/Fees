@@ -16,7 +16,6 @@
                             <tr>
                                 <th>Student Name</th>
                                 <th>Amount</th>
-                                <th>For Period</th>
                                 <th>Date</th>
                                 <th>User</th>
                                 {% if user.is_staff %}<th>Actions</th>{% endif %}
@@ -27,18 +26,13 @@
                             <tr>
                                 <td data-label="Student Name" style="min-width: 140px;">{{ payment.student.name|default:payment.description|default:"Unknown" }}</td>
                                 <td data-label="Amount" class="amount-cell">Rs.{{ payment.amount }}</td>
-<<<<<<< Updated upstream
-                                <td data-label="For Period">{{ payment.month }}/{{ payment.year }}</td>
-                                <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
-=======
                                 <td data-label="Date">{{ payment.created_date|date:"M d, Y" }}</td>
->>>>>>> Stashed changes
                                 <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                     {{payment.user.username}}</td>
                                 {% if user.is_staff %}
                                 <td data-label="Actions">
                                     <div class="action-buttons">
-                                        {% if payment.status == 'Accepted' %}
+                                        {% if payment.status == 'Accepted' or payment.status == 'Paid' or payment.status == 'Half Paid' %}
                                         <button class="btn-action btn-action-secondary" onclick="reversePayment({{ payment.pk }})">Reverse</button>
                                         {% endif %}
                                     </div>
@@ -200,9 +194,6 @@
         }
     }
 </style>
-<<<<<<< Updated upstream
-{% endblock %}
-=======
 
 <script>
 function reversePayment(paymentId) {
@@ -213,4 +204,3 @@ function reversePayment(paymentId) {
 }
 </script>
 {% endblock %}
->>>>>>> Stashed changes

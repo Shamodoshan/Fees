@@ -3,14 +3,10 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-<<<<<<< Updated upstream
-from .models import Payment, Expense, Student
-=======
 from .models import DraftPayment, DraftExpense, Student, StudentMonthlyStatus
 from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
->>>>>>> Stashed changes
 
 from django.contrib.auth.decorators import login_required
 
@@ -61,12 +57,7 @@ def add_payment(request):
     if request.method == 'POST':
         student_id = request.POST.get('student_id')
         amount = request.POST.get('amount')
-<<<<<<< Updated upstream
-        year = request.POST.get('year')
-        month = request.POST.get('month')
-=======
         monthly_fee = request.POST.get('monthly_fee')
->>>>>>> Stashed changes
         description = request.POST.get('description')
         month = request.POST.get('month', datetime.now().month)
         year = request.POST.get('year', datetime.now().year)
@@ -78,23 +69,6 @@ def add_payment(request):
             except (Student.DoesNotExist, ValueError):
                 pass
 
-<<<<<<< Updated upstream
-        Payment.objects.create(
-            user=request.user,
-            student=student,
-            student_name=student_name,
-            amount=amount,
-            year=year,
-            month=month,
-            description=description
-        )
-        if request.headers.get('HX-Request'):
-            response = render(request, 'add_payment.html')
-            response['HX-Trigger'] = 'showDraftToast'
-            return response
-        return redirect('index')
-    return render(request, 'add_payment.html')
-=======
         # Use provided monthly_fee or fall back to student's monthly fee
         payment_monthly_fee = monthly_fee if monthly_fee else (student.monthly_fee if student else None)
 
@@ -111,88 +85,74 @@ def add_payment(request):
                     target_month -= 12
                     target_year += 1
 
-                # Find previous month
-                prev_month = target_month - 1
-                prev_year = target_year
-                if prev_month < 1:
-                    prev_month += 12
-                    prev_year -= 1
-
-                prev_status = StudentMonthlyStatus.objects.filter(
+                # Check if there's an unpaid or half-paid status for the target month
+                current_status = StudentMonthlyStatus.objects.filter(
                     student=student,
-                    month=prev_month,
-                    year=prev_year
+                    month=target_month,
+                    year=target_year
                 ).first()
 
-                if prev_status and prev_status.status in ('Half Paid', 'Unpaid'):
-                    error_message = f"Cannot pay for {target_month}/{target_year} because previous month ({prev_month}/{prev_year}) is {prev_status.status}. Please complete the previous payment first."
-            except (TypeError, ValueError):
-                pass
+                if current_status and current_status.status in ['Paid', 'Accepted']:
+                    error_message = f"Cannot create new payment for {target_month}/{target_year} - payment is already {current_status.status}."
+                else:
+                    # Determine payment status and handle half payments
+                    payment_amount = Decimal(amount)
+                    monthly_fee_amount = Decimal(payment_monthly_fee) if payment_monthly_fee else Decimal('0')
+                    
+                    # Get or create StudentMonthlyStatus for this month
+                    monthly_status, created = StudentMonthlyStatus.objects.get_or_create(
+                        student=student,
+                        month=target_month,
+                        year=target_year,
+                        defaults={'paid_amount': Decimal('0'), 'status': 'Unpaid'}
+                    )
+                    
+                    # Calculate total paid after this payment
+                    total_paid = monthly_status.paid_amount + payment_amount
+                    
+                    # Determine status based on payment amount
+                    if total_paid >= monthly_fee_amount:
+                        status = 'Paid'
+                        paid_amount = monthly_fee_amount  # Don't overpay
+                    elif total_paid > 0:
+                        status = 'Half Paid'
+                        paid_amount = total_paid
+                    else:
+                        status = 'Unpaid'
+                        paid_amount = Decimal('0')
+                    
+                    # Update StudentMonthlyStatus
+                    monthly_status.paid_amount = paid_amount
+                    monthly_status.status = status
+                    monthly_status.save()
+                    
+                    # Create DraftPayment record
+                    DraftPayment.objects.create(
+                        user=request.user,
+                        student=student,
+                        amount=payment_amount,
+                        monthly_fee=payment_monthly_fee,
+                        description=description,
+                        month=month,
+                        year=year,
+                        status=status  # Set status based on payment logic
+                    )
 
-        if not error_message:
-            # Determine payment status and handle half payments
-            payment_amount = Decimal(amount)
-            monthly_fee_amount = Decimal(payment_monthly_fee) if payment_monthly_fee else Decimal('0')
-            
-            # Get or create StudentMonthlyStatus for this month
-            monthly_status, created = StudentMonthlyStatus.objects.get_or_create(
-                student=student,
-                month=target_month,
-                year=target_year,
-                defaults={'paid_amount': Decimal('0'), 'status': 'Unpaid'}
-            )
-            
-            # Calculate total paid after this payment
-            total_paid = monthly_status.paid_amount + payment_amount
-            
-            # Determine status based on payment amount
-            if total_paid >= monthly_fee_amount:
-                status = 'Paid'
-                paid_amount = monthly_fee_amount  # Don't overpay
-            elif total_paid > 0:
-                status = 'Half Paid'
-                paid_amount = total_paid
-            else:
-                status = 'Unpaid'
-                paid_amount = Decimal('0')
-            
-            # Update StudentMonthlyStatus
-            monthly_status.paid_amount = paid_amount
-            monthly_status.status = status
-            monthly_status.save()
-            
-            # Create DraftPayment record
-            DraftPayment.objects.create(
-                user=request.user,
-                student=student,
-                amount=payment_amount,
-                monthly_fee=payment_monthly_fee,
-                description=description,
-                month=month,
-                year=year,
-                status=status  # Set status based on payment logic
-            )
-            
-            if request.headers.get('HX-Request'):
-                response = render(request, 'add_payment.html')
-                response['HX-Trigger'] = 'showDraftToast'
-                return response
-            return redirect('index')
+                    if request.headers.get('HX-Request'):
+                        response = render(request, 'add_payment.html')
+                        response['HX-Trigger'] = 'showDraftToast'
+                        return response
+                    return redirect('index')
+            except (Student.DoesNotExist, ValueError):
+                pass
     
     students = Student.objects.all().order_by('name')
     return render(request, 'add_payment.html', {'students': students, 'error_message': error_message})
->>>>>>> Stashed changes
 
 @login_required(login_url='login')
 def get_student_details(request):
     student_name = request.GET.get('student_name', '').strip()
     try:
-<<<<<<< Updated upstream
-        # Search by name
-        student = Student.objects.filter(name__icontains=student_name).first()
-        return render(request, 'partials/student_details.html', {'student': student})
-    except (ValueError):
-=======
         student = Student.objects.get(name=student_name)
         # Get next payment month and year
         next_month, next_year = get_next_payment_month_year(student)
@@ -216,7 +176,6 @@ def get_student_details(request):
         }
         return render(request, 'partials/student_details.html', context)
     except (Student.DoesNotExist, ValueError):
->>>>>>> Stashed changes
         return render(request, 'partials/student_details.html', {'student': None})
 
 @login_required(login_url='login')
@@ -238,7 +197,7 @@ def add_expense(request):
         name = request.POST.get('name')
         amount = request.POST.get('amount')
         description = request.POST.get('description')
-        Expense.objects.create(
+        DraftExpense.objects.create(
             user=request.user,
             name=name,
             amount=amount,
@@ -253,26 +212,17 @@ def add_expense(request):
 
 @login_required(login_url='login')
 def view_payments(request):
-<<<<<<< Updated upstream
-    payments = Payment.objects.filter(status='Pending').order_by('-created_at')
-=======
     # Show only payments that need admin action (Draft, Half Paid, Paid but not yet Accepted)
     payments = DraftPayment.objects.filter(
         status__in=['Draft', 'Half Paid', 'Paid']
     ).exclude(student__isnull=True).order_by('-created_date')
-    
->>>>>>> Stashed changes
     return render(request, 'view_payments.html', {
         'payments': payments
     })
 
 @login_required(login_url='login')
 def view_expenses(request):
-<<<<<<< Updated upstream
-    expenses = Expense.objects.filter(status='Pending').order_by('-created_at')
-=======
     expenses = DraftExpense.objects.filter(status='Draft').order_by('-created_time')
->>>>>>> Stashed changes
     return render(request, 'view_expenses.html', {
         'expenses': expenses
     })
@@ -281,7 +231,7 @@ def view_expenses(request):
 @login_required(login_url='login')
 def accept_payment(request, pk):
     if request.user.is_staff:
-        payment = Payment.objects.get(pk=pk)
+        payment = DraftPayment.objects.get(pk=pk)
         
         # Check if admin adjusted the amount
         if request.method == 'POST':
@@ -289,13 +239,20 @@ def accept_payment(request, pk):
             if adjusted_amount:
                 payment.amount = adjusted_amount
         
+        # Set payment status to Accepted for admin tracking
         payment.status = 'Accepted'
         payment.oath_user = request.user.username
-        payment.save()  # This will trigger the process_payment method
+        payment.save()
         
-        # Ensure the payment is processed
+        # Process payment to update StudentMonthlyStatus with correct status
         if payment.student:
+            # Temporarily set status to allow process_payment to determine correct status
+            original_status = payment.status
+            payment.status = 'Draft'  # Reset to draft so process_payment can set correct status
             payment.process_payment()
+            # Restore Accepted status for the payment record
+            payment.status = original_status
+            payment.oath_user = request.user.username
             payment.save()
         
     if request.headers.get('HX-Request'):
@@ -305,7 +262,7 @@ def accept_payment(request, pk):
 @login_required(login_url='login')
 def decline_payment(request, pk):
     if request.user.is_staff:
-        payment = Payment.objects.get(pk=pk)
+        payment = DraftPayment.objects.get(pk=pk)
         payment.status = 'Declined'
         payment.oath_user = request.user.username
         payment.save()
@@ -316,7 +273,7 @@ def decline_payment(request, pk):
 @login_required(login_url='login')
 def approve_expense(request, pk):
     if request.user.is_staff:
-        expense = Expense.objects.get(pk=pk)
+        expense = DraftExpense.objects.get(pk=pk)
         
         # Check if admin adjusted the amount
         if request.method == 'POST':
@@ -334,7 +291,7 @@ def approve_expense(request, pk):
 @login_required(login_url='login')
 def decline_expense(request, pk):
     if request.user.is_staff:
-        expense = Expense.objects.get(pk=pk)
+        expense = DraftExpense.objects.get(pk=pk)
         expense.status = 'Declined'
         expense.oath_user = request.user.username
         expense.save()
@@ -344,13 +301,8 @@ def decline_expense(request, pk):
 
 @login_required(login_url='login')
 def view_confirmed(request):
-<<<<<<< Updated upstream
-    payments = Payment.objects.filter(status='Accepted').order_by('-created_at')
-    expenses = Expense.objects.filter(status='Accepted').order_by('-created_at')
-=======
     payments = DraftPayment.objects.filter(status__in=['Paid', 'Half Paid', 'Accepted']).exclude(student__isnull=True).order_by('-created_date')
     expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_time')
->>>>>>> Stashed changes
     return render(request, 'confirmed_transactions.html', {
         'payments': payments,
         'expenses': expenses
@@ -358,22 +310,14 @@ def view_confirmed(request):
 
 @login_required(login_url='login')
 def view_confirmed_payments(request):
-<<<<<<< Updated upstream
-    payments = Payment.objects.filter(status='Accepted').order_by('-created_at')
-=======
     payments = DraftPayment.objects.filter(status__in=['Paid', 'Half Paid', 'Accepted']).exclude(student__isnull=True).order_by('-created_date')
->>>>>>> Stashed changes
     return render(request, 'confirmed_payments.html', {
         'payments': payments
     })
 
 @login_required(login_url='login')
 def view_confirmed_expenses(request):
-<<<<<<< Updated upstream
-    expenses = Expense.objects.filter(status='Accepted').order_by('-created_at')
-=======
     expenses = DraftExpense.objects.filter(status='Accepted').order_by('-created_time')
->>>>>>> Stashed changes
     return render(request, 'confirmed_expenses.html', {
         'expenses': expenses
     })
@@ -383,30 +327,12 @@ from datetime import datetime
 
 @login_required(login_url='login')
 def analyze_view(request):
-<<<<<<< Updated upstream
-    # Aggregate payments by month and year
-    payment_stats = Payment.objects.filter(status='Accepted').annotate(
-        month=functions.TruncMonth('created_at')
-    ).values('month').annotate(total=Sum('amount')).order_by('-month')
-
-    # Aggregate expenses by month and year
-    expense_stats = Expense.objects.filter(status='Accepted').annotate(
-        month=functions.TruncMonth('created_at')
-    ).values('month').annotate(total=Sum('amount')).order_by('-month')
-
-    # Combine data by month
-    monthly_data = {}
-    for p in payment_stats:
-        m_str = p['month'].strftime('%B %Y')
-        monthly_data[m_str] = {'month_obj': p['month'], 'payments': p['total'], 'expenses': 0}
-=======
     # Get selected year from query parameter or default to current year
     selected_year = request.GET.get('year', datetime.now().year)
     try:
         selected_year = int(selected_year)
     except (ValueError, TypeError):
         selected_year = datetime.now().year
->>>>>>> Stashed changes
     
     # Get all available years with data
     available_years = set()
@@ -520,7 +446,7 @@ def add_student(request):
         fixed_fee = request.POST.get('monthly_fee')
         Student.objects.create(
             name=name,
-            fixed_fee=fixed_fee
+            monthly_fee=fixed_fee
         )
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('name')})
@@ -543,7 +469,7 @@ def update_student(request, pk):
     student = Student.objects.get(pk=pk)
     if request.method == 'POST':
         student.name = request.POST.get('name', '')
-        student.fixed_fee = request.POST.get('monthly_fee')
+        student.monthly_fee = request.POST.get('monthly_fee')
         student.save()
         if request.headers.get('HX-Request'):
             response = render(request, 'students.html', {'students': Student.objects.all().order_by('name')})
@@ -589,25 +515,22 @@ def search_student_details(request):
     
     if search_query:
         try:
-<<<<<<< Updated upstream
-            student = Student.objects.filter(name__icontains=search_query).first()
-        except Exception:
-=======
             student = Student.objects.get(name=search_query)
             # Get last paid month
             last_paid_month = DraftPayment.get_last_paid_month(student)
             
             # Get current month status
-            current_month = datetime.now().month
-            current_year = datetime.now().year
             try:
+                current_month = datetime.now().month
+                current_year = datetime.now().year
                 current_month_status = StudentMonthlyStatus.objects.get(
-                    student=student, month=current_month, year=current_year
+                    student=student,
+                    month=current_month,
+                    year=current_year
                 )
             except StudentMonthlyStatus.DoesNotExist:
                 current_month_status = None
         except Student.DoesNotExist:
->>>>>>> Stashed changes
             pass
     
     return render(request, 'partials/search_student_results.html', {

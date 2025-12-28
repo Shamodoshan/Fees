@@ -6,7 +6,7 @@ from datetime import date
 def get_first_of_month():
     return date.today().replace(day=1)
 
-class Payment(models.Model):
+class DraftPayment(models.Model):
     STATUS_CHOICES = [
         ('Draft', 'Draft'),
         ('Accepted', 'Accepted'),
@@ -20,17 +20,11 @@ class Payment(models.Model):
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Monthly fee for this payment period")
     created_date = models.DateTimeField(default=timezone.now)
     description = models.TextField(blank=True, null=True)
-<<<<<<< Updated upstream
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    year = models.IntegerField(null=True, blank=True)
-    month = models.IntegerField(null=True, blank=True)
-=======
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Draft')
     month = models.IntegerField()
     year = models.IntegerField()
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, db_column='user_id')
     oath_user = models.CharField(max_length=255, blank=True, null=True)
->>>>>>> Stashed changes
 
     def __str__(self):
         return f"Payment: {self.student.name if self.student else 'Unknown'} - {self.amount} ({self.status})"
@@ -134,7 +128,7 @@ class Payment(models.Model):
             total_collected=models.Sum('paid_amount')
         ).order_by('month')
 
-class Expense(models.Model):
+class DraftExpense(models.Model):
     STATUS_CHOICES = [
         ('Draft', 'Draft'),
         ('Accepted', 'Accepted'),
@@ -153,20 +147,6 @@ class Expense(models.Model):
         return f"Expense: {self.name} - {self.amount} ({self.status})"
 
 class Student(models.Model):
-<<<<<<< Updated upstream
-    name = models.CharField(max_length=200)
-    fixed_fee = models.DecimalField(max_digits=10, decimal_places=2)
-    temporary_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    last_paid_date = models.DateField(default=get_first_of_month)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-    
-    @property
-    def full_name(self):
-        return self.name
-=======
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2)
@@ -193,4 +173,3 @@ class StudentMonthlyStatus(models.Model):
 
     def __str__(self):
         return f"{self.student.name} - {self.year}/{self.month}: {self.status}"
->>>>>>> Stashed changes
