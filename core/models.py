@@ -171,6 +171,15 @@ class HolidayMonth(models.Model):
     year = models.IntegerField()
     month = models.IntegerField(choices=MONTH_CHOICES)
     reason = models.TextField(blank=True, help_text="Optional reason for the holiday")
+    
+    DISCOUNT_TYPE_CHOICES = [
+        ('Full', 'Full Holiday (100% Off)'),
+        ('Percentage', 'Percentage Discount (%)'),
+        ('Amount', 'Fixed Amount Discount (Rs)'),
+    ]
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='Full')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Value for percentage or amount discount")
+    
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:

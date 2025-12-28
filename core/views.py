@@ -11,28 +11,84 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 
+def calculate_required_fee(student, year, month):
+    """
+    Calculate the required monthly fee for a student, considering potential holiday discounts.
+    """
+    try:
+        holiday = HolidayMonth.objects.get(year=year, month=month)
+        if holiday.discount_type == 'Full':
+            return Decimal('0')
+        elif holiday.discount_type == 'Percentage':
+            discount = (student.monthly_fee * holiday.discount_value) / 100
+            return max(Decimal('0'), student.monthly_fee - discount)
+        elif holiday.discount_type == 'Amount':
+            return max(Decimal('0'), student.monthly_fee - holiday.discount_value)
+    except HolidayMonth.DoesNotExist:
+        pass
+    
+    return student.monthly_fee
+
 def get_next_payment_month_year(student):
     """
-    Get the next payment month and year for a student based on their last payment.
-    If there's a half-paid month, return that month for completion.
-    If no previous payment, return current month and year.
+    Get the next payment month and year for a student based on their last payment,
+    skipping FULL holiday months.
     """
+    # Helper to check if a month is a *full* holiday
+    def is_full_holiday(m, y):
+        try:
+            h = HolidayMonth.objects.get(month=m, year=y)
+            return h.discount_type == 'Full'
+        except HolidayMonth.DoesNotExist:
+            return False
+
+    next_month = 0
+    next_year = 0
+    
     # Check if student has a payment status
     if student.payment_status in ['Half Paid']:
-        # Return the half-paid month for completion
-        return student.month, student.year, student.paid_amount
-    elif student.payment_status in ['Paid']:
-        # Return next month after last payment
+        # Return remaining amount for the half-paid month
+        required = calculate_required_fee(student, student.year, student.month)
+        remaining = max(Decimal('0'), required - student.paid_amount)
+        return student.month, student.year, remaining
+    elif student.payment_status in ['Paid', 'Accepted']:
+        # Start checking from next month
         next_month = student.month + 1
         next_year = student.year
+    else:
+        # No payment history - start from current month
+        today = datetime.now()
+        next_month = today.month
+        next_year = today.year
+
+    # Normalize and skip holidays (loop until we find a non-holiday or partial holiday month)
+    # Limit loop to prevent infinite loop
+    for _ in range(24): # Look ahead 2 years max
         if next_month > 12:
             next_month = 1
             next_year += 1
-        return next_month, next_year, 0
-    else:
-        # No payment history - return current month
-        today = datetime.now()
-        return today.month, today.year, 0
+            
+        holiday = HolidayMonth.objects.filter(month=next_month, year=next_year).first()
+        
+        if not holiday:
+            return next_month, next_year, 0
+            
+        if holiday.discount_type == 'Full':
+            # Skip full holidays
+            next_month += 1
+            continue
+            
+        # Partial holiday - calculate reduced fee
+        fee = student.monthly_fee
+        to_pay = fee
+        if holiday.discount_type == 'Percentage':
+            to_pay = fee - (fee * holiday.discount_value / 100)
+        elif holiday.discount_type == 'Amount':
+            to_pay = fee - holiday.discount_value
+            
+        return next_month, next_year, max(Decimal('0'), to_pay)
+        
+    return next_month, next_year, 0
 
 @login_required(login_url='login')
 def index(request):
@@ -80,14 +136,33 @@ def add_payment(request):
                     payment_amount = Decimal(amount)
                     monthly_fee_amount = Decimal(payment_monthly_fee) if payment_monthly_fee else Decimal('0')
                     
+                    # Check for holiday discount override
+                    holiday = HolidayMonth.objects.filter(month=target_month, year=target_year).first()
+                    if holiday and holiday.discount_type != 'Full':
+                        # Recalculate expected fee based on holiday
+                        base_fee = student.monthly_fee if student else monthly_fee_amount
+                        if holiday.discount_type == 'Percentage':
+                            monthly_fee_amount = base_fee - (base_fee * holiday.discount_value / 100)
+                        elif holiday.discount_type == 'Amount':
+                            monthly_fee_amount = base_fee - holiday.discount_value
+                        monthly_fee_amount = max(Decimal('0'), monthly_fee_amount)
+                    
+                    # Calculate required fee based on holiday discounts
+                    required_fee = calculate_required_fee(student, target_year, target_month)
+                    
                     # Calculate total paid after this payment
                     current_paid = student.paid_amount if student.year == target_year and student.month == target_month else Decimal('0')
                     total_paid = current_paid + payment_amount
                     
-                    # Determine status based on payment amount
-                    if total_paid >= monthly_fee_amount:
+                    # Determine status based on payment amount against REQUIRED fee, not just base monthly fee
+                    # However, if monthly_fee was overridden in input, use that, but usually for holidays we want the discount logic.
+                    # Logic: If monthly_fee matches student.monthly_fee, apply discount. If custom, trust user?
+                    # Safer: Always apply discount to the base fee expectation.
+                    
+                    # If total paid meets the required fee (which might be reduced)
+                    if total_paid >= required_fee:
                         status = 'Paid'
-                        final_amount = monthly_fee_amount  # Don't overpay
+                        final_amount = total_paid # Record what was actually paid
                     elif total_paid > 0:
                         status = 'Half Paid'
                         final_amount = total_paid
@@ -568,6 +643,17 @@ def search_student_details(request):
 
                 if month_name in month_names:
                     month = month_names[month_name]
+                    
+                    # Check if it's a holiday
+                    if HolidayMonth.objects.filter(year=year, month=month).exists():
+                        return render(request, 'partials/month_search_results.html', {
+                            'unpaid_students': [], # No unpaid students on holidays
+                            'month_name': month_name.capitalize(),
+                            'year': year,
+                            'month': month,
+                            'is_holiday': True
+                        })
+                    
                     paid_statuses = ['Paid', 'Half Paid', 'Accepted']
 
                     unpaid_students = Student.objects.exclude(
@@ -581,6 +667,7 @@ def search_student_details(request):
                         'month_name': month_name.capitalize(),
                         'year': year,
                         'month': month,
+                        'is_holiday': False
                     })
         except Exception:
             pass
@@ -643,6 +730,9 @@ def student_annual_report(request):
             student = None
 
     months = []
+    
+    holidays = {h.month: h for h in HolidayMonth.objects.filter(year=year)}
+    
     if student:
         for month in range(1, 13):
             # Check if this month/year matches the student's payment data
@@ -652,6 +742,20 @@ def student_annual_report(request):
                     'month_name': datetime(year, month, 1).strftime('%B'),
                     'status': student.payment_status,
                     'paid_amount': student.paid_amount,
+                })
+            elif month in holidays:
+                h = holidays[month]
+                status = 'Holiday'
+                if h.discount_type != 'Full':
+                    required = calculate_required_fee(student, year, month)
+                    status = f"Partial Holiday (Due: {required})"
+                    
+                months.append({
+                    'month': month,
+                    'month_name': datetime(year, month, 1).strftime('%B'),
+                    'status': status,
+                    'paid_amount': 0,
+                    'is_full_holiday': h.discount_type == 'Full'
                 })
             else:
                 months.append({
@@ -683,13 +787,26 @@ def manage_holidays(request):
         month = int(request.POST.get('month'))
         year = int(request.POST.get('year'))
         reason = request.POST.get('reason', '').strip()
+        discount_type = request.POST.get('discount_type', 'Full')
+        discount_value = request.POST.get('discount_value', '0')
         
         try:
+            if not discount_value:
+                discount_value = 0
+            
+            # Ensure discount_value is Decimal so template filters work immediately
+            discount_value = Decimal(str(discount_value))
+                
             holiday = HolidayMonth.objects.create(
                 year=year,
                 month=month,
-                reason=reason
+                reason=reason,
+                discount_type=discount_type,
+                discount_value=discount_value
             )
+            # If HTMX, return just the new row
+            if request.headers.get('HX-Request'):
+                return render(request, 'partials/holiday_row.html', {'holiday': holiday})
         except Exception:
             pass  # Handle duplicate or other errors
         
@@ -711,5 +828,8 @@ def delete_holiday(request, holiday_id):
             holiday.delete()
         except HolidayMonth.DoesNotExist:
             pass
+            
+        if request.headers.get('HX-Request'):
+            return HttpResponse("")
     
     return redirect('manage_holidays')

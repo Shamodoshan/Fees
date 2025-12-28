@@ -10,7 +10,9 @@
     <!-- Add Holiday Form -->
     <div class="add-holiday-section" style="margin-bottom: 2rem;">
         <h3>Add New Holiday</h3>
-        <form method="post" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end;">
+        <form hx-post="{% url 'manage_holidays' %}" hx-target=".holidays-grid" hx-swap="afterbegin"
+            hx-on::after-request="if(event.detail.successful) this.reset()"
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end;">
             {% csrf_token %}
             <div>
                 <label for="month">Month</label>
@@ -33,14 +35,39 @@
             </div>
             <div>
                 <label for="year">Year</label>
-                <input type="number" name="year" id="year" required min="2020" max="2030" 
-                       value="{{ current_year }}" style="width: 100%; padding: 0.6rem; border-radius: 6px; 
+                <input type="number" name="year" id="year" required min="2020" max="2030" value="{{ current_year }}"
+                    style="width: 100%; padding: 0.6rem; border-radius: 6px; 
                        border: 1px solid rgba(255, 255, 255, 0.2); background: var(--card-bg); color: var(--text);">
             </div>
+            <div>
+                <label for="discount_type">Discount Type</label>
+                <select name="discount_type" id="discount_type" style="width: 100%; padding: 0.6rem; border-radius: 6px; 
+                        border: 1px solid rgba(255, 255, 255, 0.2); background: var(--card-bg); color: var(--text);"
+                    onchange="toggleDiscountValue(this.value)">
+                    <option value="Full">Full Holiday (100% Off)</option>
+                    <option value="Percentage">Percentage Discount (%)</option>
+                    <option value="Amount">Fixed Amount Discount (Rs)</option>
+                </select>
+            </div>
+            <div id="discount_value_container" style="display: none;">
+                <label for="discount_value">Discount Value</label>
+                <input type="number" step="0.01" name="discount_value" id="discount_value"
+                    placeholder="Enter percentage or amount" style="width: 100%; padding: 0.6rem; border-radius: 6px; 
+                       border: 1px solid rgba(255, 255, 255, 0.2); background: var(--card-bg); color: var(--text);">
+            </div>
+            <script>
+                function toggleDiscountValue(type) {
+                    const container = document.getElementById('discount_value_container');
+                    if (type === 'Full') {
+                        container.style.display = 'none';
+                    } else {
+                        container.style.display = 'block';
+                    }
+                }
+            </script>
             <div style="grid-column: 1 / -1;">
                 <label for="reason">Reason (optional)</label>
-                <textarea name="reason" id="reason" rows="2" placeholder="Optional reason for the holiday..."
-                          style="width: 100%; padding: 0.6rem; border-radius: 6px; 
+                <textarea name="reason" id="reason" rows="2" placeholder="Optional reason for the holiday..." style="width: 100%; padding: 0.6rem; border-radius: 6px; 
                           border: 1px solid rgba(255, 255, 255, 0.2); background: var(--card-bg); color: var(--text);
                           resize: vertical;"></textarea>
             </div>
@@ -57,31 +84,15 @@
     <!-- Existing Holidays -->
     <div class="holidays-list">
         <h3>Existing Holidays</h3>
-        {% if holidays %}
-            <div class="holidays-grid">
-                {% for holiday in holidays %}
-                <div class="holiday-item">
-                    <div class="holiday-info">
-                        <div class="holiday-month">{{ holiday.month_name }} {{ holiday.year }}</div>
-                        {% if holiday.reason %}
-                        <div class="holiday-reason">{{ holiday.reason }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="holiday-actions">
-                        <form method="post" action="{% url 'delete_holiday' holiday.id %}" 
-                              onsubmit="return confirm('Are you sure you want to delete this holiday?')">
-                            {% csrf_token %}
-                            <button type="submit" class="delete-btn">Delete</button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        {% else %}
+        <div class="holidays-grid">
+            {% for holiday in holidays %}
+            {% include 'partials/holiday_row.html' %}
+            {% empty %}
             <div class="no-holidays">
                 No holidays configured. Add a holiday above to get started.
             </div>
-        {% endif %}
+            {% endfor %}
+        </div>
     </div>
 </div>
 

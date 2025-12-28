@@ -58,6 +58,15 @@
             <h2>Search Students</h2>
             <p>Quick search for student details and information.</p>
         </a>
+
+        {% if user.is_staff %}
+        <a href="{% url 'manage_holidays' %}" class="nav-card"
+            style="background: rgba(129, 140, 248, 0.1); border-color: rgba(129, 140, 248, 0.3);">
+            <div class="icon-box">📅</div>
+            <h2>Manage Holidays</h2>
+            <p>Set holidays and fee exceptions.</p>
+        </a>
+        {% endif %}
     </div>
 </div>
 

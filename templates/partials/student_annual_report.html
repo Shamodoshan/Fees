@@ -9,17 +9,37 @@
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Month</th>
-                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Status</th>
-                    <th style="text-align:right; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Paid Amount</th>
+                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Month
+                    </th>
+                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        Status</th>
+                    <th style="text-align:right; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Paid
+                        Amount</th>
                 </tr>
             </thead>
             <tbody>
                 {% for m in months %}
                 <tr>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ m.month_name }}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ m.status }}</td>
-                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align:right;">Rs.{{ m.paid_amount }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ m.month_name }}
+                    </td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        {% if m.is_full_holiday %}
+                        <span style="color: #34d399; font-weight: 600;">Holiday 🎉</span>
+                        {% elif 'Partial Holiday' in m.status %}
+                        <span style="color: #fbbf24;">{{ m.status }}</span>
+                        {% elif m.status == 'Unpaid' %}
+                        <span style="color: #ef4444;">{{ m.status }}</span>
+                        {% else %}
+                        <span style="color: #34d399;">{{ m.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align:right;">
+                        {% if m.is_full_holiday %}
+                        -
+                        {% else %}
+                        Rs.{{ m.paid_amount }}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

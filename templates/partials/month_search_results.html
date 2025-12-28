@@ -2,13 +2,23 @@
 <div class="no-results">
     Invalid month format. Please use format like "December 2025"
 </div>
+{% elif is_holiday %}
+<div class="month-results holiday-month">
+    <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+        <h3 style="color: #34d399; font-size: 1.5rem;">Holiday Month</h3>
+        <p style="color: var(--text-dim); margin-top: 0.5rem;">
+            {{ month_name }} {{ year }} is marked as a holiday. Payment is not required.
+        </p>
+    </div>
+</div>
 {% elif unpaid_students %}
 <div class="month-results">
     <h3>Unpaid Students for {{ month_name }} {{ year }}</h3>
     <div class="unpaid-count">
         Found {{ unpaid_students|length }} unpaid student{% if unpaid_students|length != 1 %}s{% endif %}
     </div>
-    
+
     <div class="unpaid-list">
         {% for student in unpaid_students %}
         <div class="unpaid-student-item">
