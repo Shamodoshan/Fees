@@ -200,6 +200,9 @@ def add_payment(request):
     students = Student.objects.all().order_by('name')
     return render(request, 'add_payment.html', {'students': students, 'error_message': error_message})
 
+from django.views.decorators.cache import never_cache
+
+@never_cache
 @login_required(login_url='login')
 def get_student_details(request):
     search_type = request.GET.get('search_type', 'student')

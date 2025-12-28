@@ -1,6 +1,6 @@
 {% if student %}
 <script>
-    console.log("Student details script running for: {{ student.name }}");
+    console.log("Student details update at " + new Date().toISOString() + " for: {{ student.name }}");
 
     const studentNameInput = document.getElementById('student_name');
     if (studentNameInput && studentNameInput.value !== "{{ student.name }}") {
