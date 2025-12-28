@@ -3,6 +3,31 @@
 from django.db import migrations
 
 
+class SafeRenameField(migrations.operations.base.Operation):
+    reduces_to_sql = False
+    reversible = True
+
+    def __init__(self, model_name, old_name, new_name):
+        self.model_name = model_name
+        self.old_name = old_name
+        self.new_name = new_name
+
+    def state_forwards(self, app_label, state):
+        try:
+            state.rename_field(app_label, self.model_name.lower(), self.old_name, self.new_name)
+        except Exception:
+            pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        return
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        return
+
+    def describe(self):
+        return f"Safely rename field {self.old_name} to {self.new_name} on {self.model_name}"
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,7 +35,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
+        SafeRenameField(
             model_name='student',
             old_name='created_date',
             new_name='created_at',

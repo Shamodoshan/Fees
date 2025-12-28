@@ -1,0 +1,108 @@
+{% if error %}
+<div class="no-results">
+    Invalid month format. Please use format like "December 2025"
+</div>
+{% elif unpaid_students %}
+<div class="month-results">
+    <h3>Unpaid Students for {{ month_name }} {{ year }}</h3>
+    <div class="unpaid-count">
+        Found {{ unpaid_students|length }} unpaid student{% if unpaid_students|length != 1 %}s{% endif %}
+    </div>
+    
+    <div class="unpaid-list">
+        {% for student in unpaid_students %}
+        <div class="unpaid-student-item">
+            <div class="student-info">
+                <div class="student-name">{{ student.name }}</div>
+                <div class="student-fee">Monthly Fee: Rs.{{ student.monthly_fee }}</div>
+            </div>
+            <div class="payment-status">
+                <span class="status-badge unpaid">Unpaid</span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-results">
+            No unpaid students found for {{ month_name }} {{ year }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="no-results">
+    No unpaid students found for {{ month_name }} {{ year }}
+</div>
+{% endif %}
+
+<style>
+    .month-results {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .month-results h3 {
+        color: var(--text);
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .unpaid-count {
+        color: var(--text-dim);
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .unpaid-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .unpaid-student-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .unpaid-student-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateY(-1px);
+    }
+
+    .student-info {
+        flex: 1;
+    }
+
+    .student-name {
+        color: var(--text);
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .student-fee {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.unpaid {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+</style>

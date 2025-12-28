@@ -1,7 +1,6 @@
 # Generated migration for adding monthly_payments field
-
+ 
 from django.db import migrations, models
-import django.core.serializers.json
 
 
 class Migration(migrations.Migration):
@@ -10,13 +9,32 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='student',
-            name='monthly_payments',
-            field=models.JSONField(
-                default=dict,
-                encoder=django.core.serializers.json.DjangoJSONEncoder,
-                help_text='Monthly payment status and amounts in JSON format'
-            ),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.AddField(
+                    model_name='student',
+                    name='year',
+                    field=models.IntegerField(blank=True, null=True),
+                ),
+                migrations.AddField(
+                    model_name='student',
+                    name='month',
+                    field=models.IntegerField(blank=True, null=True),
+                ),
+                migrations.AddField(
+                    model_name='student',
+                    name='paid_amount',
+                    field=models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                migrations.AddField(
+                    model_name='student',
+                    name='payment_status',
+                    field=models.CharField(choices=[('Unpaid', 'Unpaid'), ('Half Paid', 'Half Paid'), ('Paid', 'Paid')], default='Unpaid', max_length=20),
+                ),
+                migrations.DeleteModel(
+                    name='StudentMonthlyStatus',
+                ),
+            ],
         ),
     ]

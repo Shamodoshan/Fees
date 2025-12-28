@@ -127,21 +127,66 @@ def add_payment(request):
 
 @login_required(login_url='login')
 def get_student_details(request):
-    student_name = request.GET.get('student_name', '').strip()
-    try:
-        student = Student.objects.get(name=student_name)
-        # Get next payment month and year
-        next_month, next_year, remaining_fee = get_next_payment_month_year(student)
+    search_type = request.GET.get('search_type', 'student')
+    # Support both old and new parameter names for compatibility
+    search_query = (
+        request.GET.get('search_input', '')
+        or request.GET.get('student_name', '')
+    ).strip()
+    
+    if search_type == 'month':
+        # Handle month search - return unpaid students for that month
+        try:
+            # Parse month input like "December 2025"
+            month_names = {
+                'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+            }
+            
+            parts = search_query.lower().split()
+            if len(parts) >= 2:
+                month_name = parts[0]
+                year = int(parts[1])
+                
+                if month_name in month_names:
+                    month = month_names[month_name]
+                    
+                    # Get unpaid students for this month
+                    unpaid_students = Student.objects.filter(
+                        models.Q(year__isnull=True) | models.Q(month__isnull=True) |
+                        models.Q(year=year, month=month, payment_status='Unpaid')
+                    ).order_by('name')
+                    
+                    return render(request, 'partials/month_search_results.html', {
+                        'unpaid_students': unpaid_students,
+                        'month_name': month_name.capitalize(),
+                        'year': year,
+                        'month': month
+                    })
+        except (ValueError, IndexError):
+            pass
         
-        context = {
-            'student': student,
-            'next_month': next_month,
-            'next_year': next_year,
-            'remaining_fee': remaining_fee
-        }
-        return render(request, 'partials/student_details.html', context)
-    except (Student.DoesNotExist, ValueError):
-        return render(request, 'partials/student_details.html', {'student': None})
+        return render(request, 'partials/month_search_results.html', {
+            'error': True,
+            'search_query': search_query
+        })
+    
+    else:
+        # Handle student search (existing functionality)
+        try:
+            student = Student.objects.get(name__iexact=search_query)
+            # Get next payment month and year
+            next_month, next_year, remaining_fee = get_next_payment_month_year(student)
+            
+            context = {
+                'student': student,
+                'next_month': next_month,
+                'next_year': next_year,
+                'remaining_fee': remaining_fee
+            }
+            return render(request, 'partials/student_details.html', context)
+        except (Student.DoesNotExist, ValueError):
+            return render(request, 'partials/student_details.html', {'student': None})
 
 @login_required(login_url='login')
 def get_student_monthly_fee(request):
@@ -493,36 +538,85 @@ def search_students(request):
 
 @login_required(login_url='login')
 def search_student_details(request):
-    search_query = request.GET.get('search_name', '').strip()
+    search_type = request.GET.get('search_type', 'student').strip() or 'student'
+    search_query = (
+        request.GET.get('search_input', '')
+        or request.GET.get('search_name', '')
+    ).strip()
+
+    if search_type == 'month':
+        try:
+            month_names = {
+                'january': 1,
+                'february': 2,
+                'march': 3,
+                'april': 4,
+                'may': 5,
+                'june': 6,
+                'july': 7,
+                'august': 8,
+                'september': 9,
+                'october': 10,
+                'november': 11,
+                'december': 12,
+            }
+
+            parts = search_query.lower().split()
+            if len(parts) >= 2:
+                month_name = parts[0]
+                year = int(parts[1])
+
+                if month_name in month_names:
+                    month = month_names[month_name]
+                    paid_statuses = ['Paid', 'Half Paid', 'Accepted']
+
+                    unpaid_students = Student.objects.exclude(
+                        year=year,
+                        month=month,
+                        payment_status__in=paid_statuses,
+                    ).order_by('name')
+
+                    return render(request, 'partials/month_search_results.html', {
+                        'unpaid_students': unpaid_students,
+                        'month_name': month_name.capitalize(),
+                        'year': year,
+                        'month': month,
+                    })
+        except Exception:
+            pass
+
+        return render(request, 'partials/month_search_results.html', {
+            'error': True,
+            'search_query': search_query,
+        })
+
     student = None
     last_paid_month = None
     current_month_status = None
     selected_year = datetime.now().year
-    
+
     if search_query:
         try:
-            student = Student.objects.get(name=search_query)
-            # Get last paid month
+            student = Student.objects.get(name__iexact=search_query)
             last_paid_data = DraftPayment.get_last_paid_month(student)
             if last_paid_data:
                 last_paid_month = {
                     'year': last_paid_data['year'],
                     'month': last_paid_data['month'],
                     'status': last_paid_data['status'],
-                    'amount': last_paid_data['amount']
+                    'amount': last_paid_data['amount'],
                 }
-            
-            # Get current month status
+
             current_month = datetime.now().month
             current_year = datetime.now().year
             if student.year == current_year and student.month == current_month:
                 current_month_status = {
                     'status': student.payment_status,
-                    'amount': student.paid_amount
+                    'amount': student.paid_amount,
                 }
         except Student.DoesNotExist:
             pass
-    
+
     return render(request, 'partials/search_student_results.html', {
         'student': student,
         'search_query': search_query,
