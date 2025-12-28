@@ -1,83 +1,49 @@
 {% if student %}
-<script>
-    console.log("Student details update at " + new Date().toISOString() + " for: {{ student.name }}");
+<!-- Update fields using OOB swap -->
+<input type="number" step="0.01" id="monthly_fee" name="monthly_fee" placeholder="0.00"
+    value="{{ student.monthly_fee }}" readonly hx-swap-oob="true">
 
-    const studentNameInput = document.getElementById('student_name');
-    if (studentNameInput && studentNameInput.value !== "{{ student.name }}") {
-        studentNameInput.value = "{{ student.name }}";
-    }
+<input type="hidden" id="student_id" name="student_id" value="{{ student.id }}" hx-swap-oob="true">
 
-    const fee = parseFloat("{{ student.monthly_fee }}");
-    const monthlyFeeInput = document.getElementById('monthly_fee');
-    if (monthlyFeeInput) monthlyFeeInput.value = "{{ student.monthly_fee }}";
+{% with calc_amount=remaining_fee|default:student.monthly_fee %}
+<input type="number" step="0.01" id="amount" name="amount" required placeholder="0.00" value="{{ calc_amount }}"
+    hx-swap-oob="true">
+{% endwith %}
 
-    const amountEl = document.getElementById('amount');
-    if (amountEl) {
-        const currentAmount = parseFloat(amountEl.value);
+<input type="text" id="month_display" name="month_display" readonly placeholder="Auto-filled"
+    style="background: var(--card-bg); color: var(--text-dim); cursor: not-allowed;"
+    value="{% if next_month == 1 %}January{% elif next_month == 2 %}February{% elif next_month == 3 %}March{% elif next_month == 4 %}April{% elif next_month == 5 %}May{% elif next_month == 6 %}June{% elif next_month == 7 %}July{% elif next_month == 8 %}August{% elif next_month == 9 %}September{% elif next_month == 10 %}October{% elif next_month == 11 %}November{% elif next_month == 12 %}December{% endif %}"
+    hx-swap-oob="true">
+<input type="hidden" id="month" name="month" value="{{ next_month }}" hx-swap-oob="true">
 
-        // Auto-fill amount with remaining fee if there's a half payment, otherwise use monthly fee
-        {% if remaining_fee > 0 %}
-        const remainingFee = parseFloat("{{ remaining_fee }}");
-        if (!amountEl.value || (Number.isFinite(remainingFee) && Number.isFinite(currentAmount) && currentAmount < remainingFee)) {
-            amountEl.value = "{{ remaining_fee }}";
-        }
-        {% else %}
-        if (!amountEl.value || (Number.isFinite(fee) && Number.isFinite(currentAmount) && currentAmount < fee)) {
-            amountEl.value = "{{ student.monthly_fee }}";
-        }
-        {% endif %}
-    }
+<input type="text" id="year_display" name="year_display" readonly placeholder="Auto-filled"
+    style="background: var(--card-bg); color: var(--text-dim); cursor: not-allowed;" value="{{ next_year }}"
+    hx-swap-oob="true">
+<input type="hidden" id="year" name="year" value="{{ next_year }}" hx-swap-oob="true">
 
-    const studentIdInput = document.getElementById('student_id');
-    if (studentIdInput) studentIdInput.value = "{{ student.id }}";
-
-    // Auto-fill month and year based on student's last payment
-    const monthInput = document.getElementById('month');
-    const yearInput = document.getElementById('year');
-    const monthDisplay = document.getElementById('month_display');
-    const yearDisplay = document.getElementById('year_display');
-
-    if (monthInput && yearInput) {
-        monthInput.value = "{{ next_month }}";
-        yearInput.value = "{{ next_year }}";
-
-        // Set display values with readable month name
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
-        if (monthDisplay && yearDisplay) {
-            const monthIndex = parseInt("{{ next_month }}") - 1;
-            if (monthIndex >= 0 && monthIndex < 12) {
-                monthDisplay.value = monthNames[monthIndex];
-            }
-            yearDisplay.value = "{{ next_year }}";
-        }
-    }
-
-    // Show remaining fee message if applicable
+<div id="fee-message" hx-swap-oob="true">
     {% if remaining_fee > 0 %}
-    if (amountEl) {
-        const remainingFeeMsg = document.createElement('div');
-        remainingFeeMsg.style.cssText = 'color: #f59e0b; font-size: 0.85rem; margin-top: 0.5rem; font-weight: 500;';
-        remainingFeeMsg.textContent = 'Remaining fee for this month: Rs.{{ remaining_fee }}';
-
-        // Remove any existing message
-        const existingMsg = amountEl.parentNode.querySelector('.remaining-fee-msg');
-        if (existingMsg) {
-            existingMsg.remove();
-        }
-
-        remainingFeeMsg.className = 'remaining-fee-msg';
-        amountEl.parentNode.appendChild(remainingFeeMsg);
-    }
+    <div style="color: #f59e0b; font-size: 0.85rem; margin-top: 0.5rem; font-weight: 500;" class="remaining-fee-msg">
+        Remaining fee for this month: Rs.{{ remaining_fee }}
+    </div>
     {% endif %}
-</script>
+</div>
+
+<!-- Output something in the main target to confirm finding -->
+<div style="font-size: 0.8rem; color: var(--secondary); margin-top: 0.5rem;">
+    Found: {{ student.name }} ({{ next_month }}/{{ next_year }})
+</div>
 
 {% else %}
-<!-- No matching student -->
-<script>
-    // Clear fields if no student found? Or just do nothing?
-    // Maybe clear the ID to prevent submission with wrong student
-    const sId = document.getElementById('student_id');
-    if (sId) sId.value = '';
-</script>
+<!-- Clear fields if no student found -->
+<input type="hidden" id="student_id" name="student_id" value="" hx-swap-oob="true">
+<input type="number" step="0.01" id="monthly_fee" name="monthly_fee" placeholder="0.00" value="" readonly
+    hx-swap-oob="true">
+<input type="number" step="0.01" id="amount" name="amount" required placeholder="0.00" value="" hx-swap-oob="true">
+<input type="text" id="month_display" name="month_display" readonly placeholder="Auto-filled" value=""
+    style="background: var(--card-bg); color: var(--text-dim); cursor: not-allowed;" hx-swap-oob="true">
+<input type="text" id="year_display" name="year_display" readonly placeholder="Auto-filled" value=""
+    style="background: var(--card-bg); color: var(--text-dim); cursor: not-allowed;" hx-swap-oob="true">
+<div id="fee-message" hx-swap-oob="true"></div>
+<div style="color: var(--error); font-size: 0.8rem; margin-top: 0.5rem;">Student not found</div>
 {% endif %}

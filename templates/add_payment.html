@@ -34,6 +34,7 @@
         <div class="form-group">
             <label for="amount">Amount</label>
             <input type="number" step="0.01" id="amount" name="amount" required placeholder="0.00">
+            <div id="fee-message"></div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -59,4 +60,27 @@
         <button type="submit" class="btn-submit">Save Payment</button>
     </form>
 </div>
+
+<script>
+    // Listen for the resetPaymentForm event from HTMX
+    document.body.addEventListener('resetPaymentForm', function () {
+        // Clear all form fields
+        document.getElementById('student_name').value = '';
+        document.getElementById('student_id').value = '';
+        document.getElementById('monthly_fee').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('month_display').value = '';
+        document.getElementById('month').value = '';
+        document.getElementById('year_display').value = '';
+        document.getElementById('year').value = '';
+        document.getElementById('description').value = '';
+
+        // Clear the student data bridge and fee message
+        document.getElementById('student-data-bridge').innerHTML = '';
+        document.getElementById('fee-message').innerHTML = '';
+
+        // Focus back on the student name field for quick consecutive entry
+        document.getElementById('student_name').focus();
+    });
+</script>
 {% endblock %}

@@ -191,7 +191,10 @@ def add_payment(request):
 
                     if request.headers.get('HX-Request'):
                         response = render(request, 'add_payment.html')
-                        response['HX-Trigger'] = 'showDraftToast'
+                        response['HX-Trigger'] = json.dumps({
+                            'showDraftToast': {},
+                            'resetPaymentForm': {}
+                        })
                         return response
                     return redirect('index')
             except (Student.DoesNotExist, ValueError):
