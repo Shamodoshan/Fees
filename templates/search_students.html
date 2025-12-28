@@ -7,7 +7,7 @@
         <a href="/" style="color: var(--primary); text-decoration: none;">&larr; Back to Home</a>
     </div>
 
-    <div class="search-container" style="margin-bottom: 2rem;">
+    <div class="search-container" style="margin-bottom: 2rem; position: relative;">
         <div class="search-row">
             <select id="search_type" name="search_type" class="search-dropdown">
                 <option value="student">Student</option>
@@ -19,6 +19,8 @@
                 hx-target="#search-results"
                 hx-include="#search_type"
                 class="search-input">
+            <!-- Dropdown for autocomplete suggestions -->
+            <div id="autocomplete-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
         </div>
     </div>
 
@@ -164,6 +166,44 @@
         padding: 2rem;
         font-style: italic;
     }
+
+    /* Autocomplete dropdown styles */
+    .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 82px;
+        right: 0;
+        background: var(--card-bg);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    .autocomplete-suggestion {
+        padding: 0.6rem 0.8rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text);
+    }
+
+    .autocomplete-suggestion:last-child {
+        border-bottom: none;
+    }
+
+    .autocomplete-suggestion:hover,
+    .autocomplete-suggestion.selected {
+        background: rgba(129, 140, 248, 0.2);
+        color: var(--primary);
+    }
+
+    .autocomplete-suggestion .highlight {
+        color: var(--primary);
+        font-weight: 600;
+    }
 </style>
 
 <script>
@@ -174,6 +214,153 @@ document.getElementById('search_type').addEventListener('change', function() {
     } else {
         searchInput.placeholder = 'Enter student name...';
     }
+});
+
+// Autocomplete functionality
+const searchInput = document.getElementById('search_input');
+const searchType = document.getElementById('search_type');
+const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+let selectedSuggestionIndex = -1;
+let suggestions = [];
+
+// Function to fetch autocomplete suggestions
+async function fetchSuggestions(query) {
+    if (searchType.value !== 'student' || query.length < 1) {
+        hideDropdown();
+        return;
+    }
+
+    try {
+        const response = await fetch(`{% url 'student_autocomplete' %}?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        suggestions = data.suggestions || [];
+        showSuggestions();
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        hideDropdown();
+    }
+}
+
+// Function to display suggestions
+function showSuggestions() {
+    if (suggestions.length === 0) {
+        hideDropdown();
+        return;
+    }
+
+    const html = suggestions.map((suggestion, index) => {
+        const name = suggestion.name;
+        const query = searchInput.value;
+        const highlightedName = name.replace(
+            new RegExp(`(${query})`, 'gi'),
+            '<span class="highlight">$1</span>'
+        );
+        
+        return `<div class="autocomplete-suggestion" data-index="${index}" data-name="${name}">
+            ${highlightedName}
+        </div>`;
+    }).join('');
+
+    autocompleteDropdown.innerHTML = html;
+    autocompleteDropdown.style.display = 'block';
+    selectedSuggestionIndex = -1;
+
+    // Add click handlers to suggestions
+    autocompleteDropdown.querySelectorAll('.autocomplete-suggestion').forEach(item => {
+        item.addEventListener('click', function() {
+            searchInput.value = this.dataset.name;
+            hideDropdown();
+            searchInput.focus();
+            // Trigger the search
+            htmx.trigger(searchInput, 'keyup');
+        });
+    });
+}
+
+// Function to hide dropdown
+function hideDropdown() {
+    autocompleteDropdown.style.display = 'none';
+    selectedSuggestionIndex = -1;
+    suggestions = [];
+}
+
+// Function to select suggestion with keyboard
+function selectSuggestion(index) {
+    const suggestionItems = autocompleteDropdown.querySelectorAll('.autocomplete-suggestion');
+    
+    // Remove previous selection
+    if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestionItems.length) {
+        suggestionItems[selectedSuggestionIndex].classList.remove('selected');
+    }
+
+    // Set new selection
+    selectedSuggestionIndex = index;
+    if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestionItems.length) {
+        suggestionItems[selectedSuggestionIndex].classList.add('selected');
+        searchInput.value = suggestions[selectedSuggestionIndex].name;
+    }
+}
+
+// Event listeners
+searchInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    if (query.length > 0 && searchType.value === 'student') {
+        fetchSuggestions(query);
+    } else {
+        hideDropdown();
+    }
+});
+
+searchInput.addEventListener('keydown', function(e) {
+    const suggestionItems = autocompleteDropdown.querySelectorAll('.autocomplete-suggestion');
+    
+    switch (e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (suggestions.length > 0) {
+                const newIndex = selectedSuggestionIndex < suggestions.length - 1 
+                    ? selectedSuggestionIndex + 1 
+                    : 0;
+                selectSuggestion(newIndex);
+            }
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (suggestions.length > 0) {
+                const newIndex = selectedSuggestionIndex > 0 
+                    ? selectedSuggestionIndex - 1 
+                    : suggestions.length - 1;
+                selectSuggestion(newIndex);
+            }
+            break;
+            
+        case 'Enter':
+            if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < suggestions.length) {
+                e.preventDefault();
+                searchInput.value = suggestions[selectedSuggestionIndex].name;
+                hideDropdown();
+                // Trigger the search
+                htmx.trigger(searchInput, 'keyup');
+            }
+            break;
+            
+        case 'Escape':
+            hideDropdown();
+            break;
+    }
+});
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !autocompleteDropdown.contains(e.target)) {
+        hideDropdown();
+    }
+});
+
+// Hide dropdown when search type changes
+searchType.addEventListener('change', function() {
+    hideDropdown();
 });
 </script>
 {% endblock %}

@@ -36,6 +36,7 @@ urlpatterns = [
     path('student-monthly-fee/', views.get_student_monthly_fee, name='get_student_monthly_fee'),
     path('search-students/', views.search_students, name='search_students'),
     path('search-student-details/', views.search_student_details, name='search_student_details'),
+    path('student-autocomplete/', views.student_autocomplete, name='student_autocomplete'),
     path('student-annual-report/', views.student_annual_report, name='student_annual_report'),
     path('analyze/', views.analyze_view, name='analyze'),
     path('students/', views.view_students, name='view_students'),
@@ -47,4 +48,5 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('holidays/', views.manage_holidays, name='manage_holidays'),
     path('holidays/delete/<int:holiday_id>/', views.delete_holiday, name='delete_holiday'),
+    path('holidays/delete-student-discount/<int:discount_id>/', views.delete_student_discount, name='delete_student_discount'),
 ]

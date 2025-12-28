@@ -4,17 +4,37 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import models
-from .models import DraftPayment, DraftExpense, Student, HolidayMonth
+from .models import DraftPayment, DraftExpense, Student, HolidayMonth, StudentDiscount
 from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 
 def calculate_required_fee(student, year, month):
     """
     Calculate the required monthly fee for a student, considering potential holiday discounts.
+    Checks both global holidays and student-specific discounts.
     """
+    # First check for student-specific discount
+    try:
+        student_discount = StudentDiscount.objects.get(
+            student=student,
+            year=year,
+            month=month
+        )
+        if student_discount.discount_type == 'Full':
+            return Decimal('0')
+        elif student_discount.discount_type == 'Percentage':
+            discount = (student.monthly_fee * student_discount.discount_value) / 100
+            return max(Decimal('0'), student.monthly_fee - discount)
+        elif student_discount.discount_type == 'Amount':
+            return max(Decimal('0'), student.monthly_fee - student_discount.discount_value)
+    except StudentDiscount.DoesNotExist:
+        pass
+    
+    # If no student-specific discount, check for global holiday
     try:
         holiday = HolidayMonth.objects.get(year=year, month=month)
         if holiday.discount_type == 'Full':
@@ -32,10 +52,18 @@ def calculate_required_fee(student, year, month):
 def get_next_payment_month_year(student):
     """
     Get the next payment month and year for a student based on their last payment,
-    skipping FULL holiday months.
+    skipping FULL holiday months (both global and student-specific).
     """
-    # Helper to check if a month is a *full* holiday
-    def is_full_holiday(m, y):
+    # Helper to check if a month is a *full* holiday or full discount for this student
+    def is_full_discount(m, y):
+        # First check for student-specific full discount
+        try:
+            student_discount = StudentDiscount.objects.get(student=student, month=m, year=y)
+            return student_discount.discount_type == 'Full'
+        except StudentDiscount.DoesNotExist:
+            pass
+        
+        # Then check for global full holiday
         try:
             h = HolidayMonth.objects.get(month=m, year=y)
             return h.discount_type == 'Full'
@@ -68,25 +96,14 @@ def get_next_payment_month_year(student):
             next_month = 1
             next_year += 1
             
-        holiday = HolidayMonth.objects.filter(month=next_month, year=next_year).first()
-        
-        if not holiday:
-            return next_month, next_year, 0
+        # Check if this month has a full discount for this student
+        if not is_full_discount(next_month, next_year):
+            # Calculate the required fee for this month
+            fee = calculate_required_fee(student, next_year, next_month)
+            return next_month, next_year, fee
             
-        if holiday.discount_type == 'Full':
-            # Skip full holidays
-            next_month += 1
-            continue
-            
-        # Partial holiday - calculate reduced fee
-        fee = student.monthly_fee
-        to_pay = fee
-        if holiday.discount_type == 'Percentage':
-            to_pay = fee - (fee * holiday.discount_value / 100)
-        elif holiday.discount_type == 'Amount':
-            to_pay = fee - holiday.discount_value
-            
-        return next_month, next_year, max(Decimal('0'), to_pay)
+        # Skip full discount months
+        next_month += 1
         
     return next_month, next_year, 0
 
@@ -272,11 +289,25 @@ def get_student_details(request):
 @login_required(login_url='login')
 def get_student_monthly_fee(request):
     student_id = request.GET.get('student_id', '')
+    month = request.GET.get('month', '')
+    year = request.GET.get('year', '')
+    
     try:
         student = Student.objects.get(pk=student_id)
+        
+        # If month and year are provided, calculate the required fee with discounts
+        if month and year:
+            month = int(month)
+            year = int(year)
+            required_fee = calculate_required_fee(student, year, month)
+        else:
+            # Default to current month if no month/year specified
+            today = datetime.now()
+            required_fee = calculate_required_fee(student, today.year, today.month)
+        
         if request.headers.get('HX-Request'):
-            return HttpResponse(str(student.monthly_fee))
-        return HttpResponse(str(student.monthly_fee))
+            return HttpResponse(str(required_fee))
+        return HttpResponse(str(required_fee))
     except (Student.DoesNotExist, ValueError):
         if request.headers.get('HX-Request'):
             return HttpResponse('0')
@@ -787,9 +818,11 @@ def manage_holidays(request):
         return redirect('index')
     
     holidays = HolidayMonth.objects.all().order_by('-year', 'month')
+    student_discounts = StudentDiscount.objects.all().order_by('-year', 'month', 'student__name')
     current_year = datetime.now().year
     
     if request.method == 'POST':
+        discount_scope = request.POST.get('discount_scope')
         month = int(request.POST.get('month'))
         year = int(request.POST.get('year'))
         reason = request.POST.get('reason', '').strip()
@@ -802,17 +835,38 @@ def manage_holidays(request):
             
             # Ensure discount_value is Decimal so template filters work immediately
             discount_value = Decimal(str(discount_value))
-                
-            holiday = HolidayMonth.objects.create(
-                year=year,
-                month=month,
-                reason=reason,
-                discount_type=discount_type,
-                discount_value=discount_value
-            )
-            # If HTMX, return just the new row
-            if request.headers.get('HX-Request'):
-                return render(request, 'partials/holiday_row.html', {'holiday': holiday})
+            
+            if discount_scope == 'all':
+                # Create global holiday
+                holiday = HolidayMonth.objects.create(
+                    year=year,
+                    month=month,
+                    reason=reason,
+                    discount_type=discount_type,
+                    discount_value=discount_value
+                )
+                # If HTMX, return just the new row
+                if request.headers.get('HX-Request'):
+                    return render(request, 'partials/holiday_row.html', {'holiday': holiday})
+            elif discount_scope == 'student':
+                # Create student-specific discount
+                student_name = request.POST.get('student_search', '').strip()
+                if student_name:
+                    try:
+                        student = Student.objects.get(name__iexact=student_name)
+                        student_discount = StudentDiscount.objects.create(
+                            student=student,
+                            year=year,
+                            month=month,
+                            reason=reason,
+                            discount_type=discount_type,
+                            discount_value=discount_value
+                        )
+                        # If HTMX, return just the new row
+                        if request.headers.get('HX-Request'):
+                            return render(request, 'partials/student_discount_row.html', {'discount': student_discount})
+                    except Student.DoesNotExist:
+                        pass  # Handle student not found error
         except Exception:
             pass  # Handle duplicate or other errors
         
@@ -820,6 +874,7 @@ def manage_holidays(request):
     
     return render(request, 'manage_holidays.html', {
         'holidays': holidays,
+        'student_discounts': student_discounts,
         'current_year': current_year
     })
 
@@ -839,3 +894,37 @@ def delete_holiday(request, holiday_id):
             return HttpResponse("")
     
     return redirect('manage_holidays')
+
+@login_required(login_url='login')
+def delete_student_discount(request, discount_id):
+    if not request.user.is_staff:
+        return redirect('index')
+    
+    if request.method == 'POST':
+        try:
+            discount = StudentDiscount.objects.get(id=discount_id)
+            discount.delete()
+        except StudentDiscount.DoesNotExist:
+            pass
+            
+        if request.headers.get('HX-Request'):
+            return HttpResponse("")
+    
+    return redirect('manage_holidays')
+
+@login_required(login_url='login')
+def student_autocomplete(request):
+    """Return student names that start with the given query"""
+    query = request.GET.get('q', '').strip()
+    
+    if not query:
+        return JsonResponse({'suggestions': []})
+    
+    # Get students whose names start with the query (case-insensitive)
+    students = Student.objects.filter(
+        name__istartswith=query
+    ).order_by('name')[:10]  # Limit to 10 suggestions
+    
+    suggestions = [{'name': student.name} for student in students]
+    
+    return JsonResponse({'suggestions': suggestions})

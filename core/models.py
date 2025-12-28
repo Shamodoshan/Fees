@@ -197,3 +197,35 @@ class HolidayMonth(models.Model):
     def month_name(self):
         return self.get_month_display()
 
+
+class StudentDiscount(models.Model):
+    """
+    Student-specific discounts for specific months.
+    """
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='discounts')
+    year = models.IntegerField()
+    month = models.IntegerField(choices=HolidayMonth.MONTH_CHOICES)
+    reason = models.TextField(blank=True, help_text="Optional reason for the discount")
+    
+    DISCOUNT_TYPE_CHOICES = HolidayMonth.DISCOUNT_TYPE_CHOICES
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='Full')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Value for percentage or amount discount")
+    
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'core_studentdiscount'
+        unique_together = ['student', 'year', 'month']
+        ordering = ['-year', 'month', 'student__name']
+        indexes = [
+            models.Index(fields=['student', 'year', 'month']),
+            models.Index(fields=['year', 'month']),
+        ]
+
+    def __str__(self):
+        return f"{self.student.name} - {self.get_month_display()} {self.year}"
+
+    @property
+    def month_name(self):
+        return self.get_month_display()
+

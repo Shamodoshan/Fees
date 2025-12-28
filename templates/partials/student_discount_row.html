@@ -1,0 +1,25 @@
+<div class="holiday-item student-discount-item" id="student-discount-{{ discount.id }}">
+    <div class="holiday-info">
+        <div class="holiday-month">{{ discount.student.name }} - {{ discount.month_name }} {{ discount.year }}</div>
+        {% if discount.reason %}
+        <div class="holiday-reason">{{ discount.reason }}</div>
+        {% endif %}
+        <div class="holiday-discount" style="font-size: 0.85rem; color: #34d399; margin-top: 0.25rem;">
+            {% if discount.discount_type == 'Full' %}
+            Full Holiday (100% Off)
+            {% elif discount.discount_type == 'Percentage' %}
+            {{ discount.discount_value|stringformat:".0f" }}% Off
+            {% elif discount.discount_type == 'Amount' %}
+            Rs. {{ discount.discount_value|stringformat:".2f" }} Off
+            {% endif %}
+            <span style="color: var(--text-dim); margin-left: 0.5rem;">(Student Specific)</span>
+        </div>
+    </div>
+    <div class="holiday-actions">
+        <button hx-post="{% url 'delete_student_discount' discount.id %}"
+            hx-confirm="Are you sure you want to delete this student discount?" hx-target="#student-discount-{{ discount.id }}"
+            hx-swap="outerHTML" class="delete-btn">
+            Delete
+        </button>
+    </div>
+</div>

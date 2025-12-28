@@ -13,10 +13,7 @@
         <span class="detail-value">
             {% if last_paid_month %}
             {% with month_num=last_paid_month.month %}
-            {% if month_num == 1 %}January{% elif month_num == 2 %}February{% elif month_num == 3 %}March{% elif
-            month_num == 4 %}April{% elif month_num == 5 %}May{% elif month_num == 6 %}June{% elif month_num == 7
-            %}July{% elif month_num == 8 %}August{% elif month_num == 9 %}September{% elif month_num == 10 %}October{%
-            elif month_num == 11 %}November{% elif month_num == 12 %}December{% endif %} {{ last_paid_month.year }}
+            {% if month_num == 1 %}January{% elif month_num == 2 %}February{% elif month_num == 3 %}March{% elif month_num == 4 %}April{% elif month_num == 5 %}May{% elif month_num == 6 %}June{% elif month_num == 7 %}July{% elif month_num == 8 %}August{% elif month_num == 9 %}September{% elif month_num == 10 %}October{% elif month_num == 11 %}November{% elif month_num == 12 %}December{% endif %} {{ last_paid_month.year }}
             {% endwith %}
             {% else %}
             -
