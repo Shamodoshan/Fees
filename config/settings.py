@@ -81,19 +81,42 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+# Try to connect to PostgreSQL, fallback to SQLite if connection fails
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': tmpPostgres.path.replace('/', ''),
-        'USER': tmpPostgres.username,
-        'PASSWORD': tmpPostgres.password,
-        'HOST': tmpPostgres.hostname,
-        'PORT': 5432,
-        'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+if DATABASE_URL:
+    try:
+        # Test PostgreSQL connection
+        tmpPostgres = urlparse(DATABASE_URL)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': tmpPostgres.path.replace('/', ''),
+                'USER': tmpPostgres.username,
+                'PASSWORD': tmpPostgres.password,
+                'HOST': tmpPostgres.hostname,
+                'PORT': 5432,
+                'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+            }
+        }
+        print("Using PostgreSQL database")
+    except Exception as e:
+        print(f"PostgreSQL connection failed: {e}")
+        print("Falling back to SQLite")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+else:
+    print("DATABASE_URL not found, using SQLite")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
 
 # Password validation

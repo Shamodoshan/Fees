@@ -2,10 +2,57 @@
 <div id="student-data-bridge" hx-swap-oob="true">
     <script>
         document.getElementById('student_name').value = "{{ student.name }}";
+<<<<<<< Updated upstream
         document.getElementById('amount').value = "{{ student.fixed_fee }}";
+=======
+        const fee = parseFloat("{{ student.monthly_fee }}");
+        document.getElementById('monthly_fee').value = "{{ student.monthly_fee }}";
+
+        const amountEl = document.getElementById('amount');
+        const currentAmount = parseFloat(amountEl.value);
+        
+        // Auto-fill amount with remaining fee if there's a half payment, otherwise use monthly fee
+        {% if remaining_fee > 0 %}
+        const remainingFee = parseFloat("{{ remaining_fee }}");
+        if (!amountEl.value || (Number.isFinite(remainingFee) && Number.isFinite(currentAmount) && currentAmount < remainingFee)) {
+            amountEl.value = "{{ remaining_fee }}";
+        }
+        {% else %}
+        if (!amountEl.value || (Number.isFinite(fee) && Number.isFinite(currentAmount) && currentAmount < fee)) {
+            amountEl.value = "{{ student.monthly_fee }}";
+        }
+        {% endif %}
+        
+>>>>>>> Stashed changes
         document.getElementById('student_id').value = "{{ student.id }}";
+        
+        // Auto-fill month and year based on student's last payment
+        const monthSelect = document.getElementById('month');
+        const yearInput = document.getElementById('year');
+        
+        if (monthSelect && yearInput) {
+            monthSelect.value = "{{ next_month }}";
+            yearInput.value = "{{ next_year }}";
+        }
+        
+        // Show remaining fee message if applicable
+        {% if remaining_fee > 0 %}
+        const remainingFeeMsg = document.createElement('div');
+        remainingFeeMsg.style.cssText = 'color: #f59e0b; font-size: 0.85rem; margin-top: 0.5rem; font-weight: 500;';
+        remainingFeeMsg.textContent = 'Remaining fee for this month: Rs.{{ remaining_fee }}';
+        
+        // Remove any existing message
+        const existingMsg = amountEl.parentNode.querySelector('.remaining-fee-msg');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        remainingFeeMsg.className = 'remaining-fee-msg';
+        amountEl.parentNode.appendChild(remainingFeeMsg);
+        {% endif %}
     </script>
 </div>
+
 {% else %}
 <div id="student-data-bridge" hx-swap-oob="true">
     <!-- No matching student -->

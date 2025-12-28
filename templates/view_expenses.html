@@ -23,10 +23,10 @@
                     <tbody>
                         {% for expense in expenses %}
                         <tr id="expense-row-{{ expense.pk }}">
-                            <td data-label="Expense" style="min-width: 140px;">{{ expense.expense_name }}</td>
+                            <td data-label="Expense" style="min-width: 140px;">{{ expense.name }}</td>
                             <td data-label="Amount" class="amount-cell expense-amt"
                                 id="amount-display-{{ expense.pk }}">Rs.{{ expense.amount }}</td>
-                            <td data-label="Date">{{ expense.created_at|date:"M d, Y" }}</td>
+                            <td data-label="Date">{{ expense.created_time|date:"M d, Y" }}</td>
                             <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                 {{expense.user.username}}</td>
                             {% if user.is_staff %}
@@ -133,8 +133,11 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(148, 163, 184, 0.2);
     }
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
     .table-container {
         width: 100%;
         overflow-x: auto;

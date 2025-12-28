@@ -10,9 +10,29 @@
     </div>
     <div class="detail-row">
         <span class="detail-label">Last Paid Month</span>
-        <span class="detail-value">{{ student.last_paid_date|date:"F Y" }}</span>
+        <span class="detail-value">
+            {% if last_paid_month %}
+            {{ last_paid_month.year }}/{{ last_paid_month.month }}
+            {% else %}
+            -
+            {% endif %}
+        </span>
+    </div>
+
+    <div class="detail-row" style="justify-content: flex-end; gap: 0.75rem; border-bottom: none;">
+        <input type="number" id="annual-report-year" name="year" value="{{ selected_year }}" style="width: 120px; padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: var(--card-bg); color: var(--text);">
+        <button type="button" class="btn-submit"
+            hx-get="{% url 'student_annual_report' %}"
+            hx-include="#annual-report-year"
+            hx-vals='{"student_id": "{{ student.id }}"}'
+            hx-target="#annual-report"
+            hx-swap="innerHTML">
+            View Annual Report
+        </button>
     </div>
 </div>
+
+<div id="annual-report" style="margin-top: 1rem;"></div>
 {% elif search_query %}
 <div class="no-results">
     No student found with the name "{{ search_query }}"

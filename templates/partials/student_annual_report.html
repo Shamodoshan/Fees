@@ -1,0 +1,31 @@
+{% if student %}
+<div class="student-details">
+    <div class="detail-row">
+        <span class="detail-label">Annual Report</span>
+        <span class="detail-value">{{ student.name }} - {{ year }}</span>
+    </div>
+
+    <div style="margin-top: 1rem; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Month</th>
+                    <th style="text-align:left; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Status</th>
+                    <th style="text-align:right; padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1);">Paid Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in months %}
+                <tr>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ m.month_name }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05);">{{ m.status }}</td>
+                    <td style="padding: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); text-align:right;">Rs.{{ m.paid_amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="no-results">Student not found.</div>
+{% endif %}

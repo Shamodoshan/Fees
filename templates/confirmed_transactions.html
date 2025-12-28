@@ -29,10 +29,14 @@
                                 <td data-label="Student ID" style="color: var(--text-dim); font-family: monospace;">
                                     {% if payment.student %}STU-{{ payment.student.id }}{% else %}-{%endif %}
                                 </td>
-                                <td data-label="Student Name" style="min-width: 140px;">{{ payment.student_name }}</td>
+                                <td data-label="Student Name" style="min-width: 140px;">{{ payment.student.name|default:payment.description|default:"Unknown" }}</td>
                                 <td data-label="Amount" class="amount-cell">Rs.{{ payment.amount }}</td>
+<<<<<<< Updated upstream
                                 <td data-label="For Period">{{ payment.month }}/{{ payment.year }}</td>
                                 <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
+=======
+                                <td data-label="Date">{{ payment.created_date|date:"M d, Y" }}</td>
+>>>>>>> Stashed changes
                                 <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                     {{payment.user.username}}</td>
                             </tr>
@@ -63,9 +67,9 @@
                         <tbody>
                             {% for expense in expenses %}
                             <tr>
-                                <td data-label="Expense" style="min-width: 140px;">{{ expense.expense_name }}</td>
+                                <td data-label="Expense" style="min-width: 140px;">{{ expense.name }}</td>
                                 <td data-label="Amount" class="amount-cell expense-amt">Rs.{{ expense.amount }}</td>
-                                <td data-label="Date">{{ expense.created_at|date:"M d, Y" }}</td>
+                                <td data-label="Date">{{ expense.created_time|date:"M d, Y" }}</td>
                                 <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                     {{expense.user.username}}</td>
                             </tr>

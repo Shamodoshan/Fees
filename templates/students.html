@@ -28,8 +28,21 @@
                         {% for student in students %}
                         <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                             <td data-label="Name" style="font-weight: 600;">{{ student.name }}</td>
+<<<<<<< Updated upstream
                             <td data-label="Monthly Fee" class="amount-cell">Rs.{{ student.fixed_fee }}</td>
                             <td data-label="Last Paid Month">{{ student.last_paid_date|date:"F Y" }}</td>
+=======
+                            <td data-label="Monthly Fee" class="amount-cell">Rs.{{ student.monthly_fee }}</td>
+                            <td data-label="Last Paid Month">
+                                {% if student.last_paid_month %}
+                                {% with month_num=student.last_paid_month.month %}
+                                {% if month_num == 1 %}January{% elif month_num == 2 %}February{% elif month_num == 3 %}March{% elif month_num == 4 %}April{% elif month_num == 5 %}May{% elif month_num == 6 %}June{% elif month_num == 7 %}July{% elif month_num == 8 %}August{% elif month_num == 9 %}September{% elif month_num == 10 %}October{% elif month_num == 11 %}November{% elif month_num == 12 %}December{% endif %} {{ student.last_paid_month.year }}
+                                {% endwith %}
+                                {% else %}
+                                <span style="color: var(--text-dim); font-style: italic;">No payments</span>
+                                {% endif %}
+                            </td>
+>>>>>>> Stashed changes
                             {% if user.is_staff %}
                             <td data-label="Actions">
                                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">

@@ -19,21 +19,35 @@
                                 <th>For Period</th>
                                 <th>Date</th>
                                 <th>User</th>
+                                {% if user.is_staff %}<th>Actions</th>{% endif %}
                             </tr>
                         </thead>
                         <tbody>
                             {% for payment in payments %}
                             <tr>
-                                <td data-label="Student Name" style="min-width: 140px;">{{ payment.student_name }}</td>
+                                <td data-label="Student Name" style="min-width: 140px;">{{ payment.student.name|default:payment.description|default:"Unknown" }}</td>
                                 <td data-label="Amount" class="amount-cell">Rs.{{ payment.amount }}</td>
+<<<<<<< Updated upstream
                                 <td data-label="For Period">{{ payment.month }}/{{ payment.year }}</td>
                                 <td data-label="Date">{{ payment.created_at|date:"M d, Y" }}</td>
+=======
+                                <td data-label="Date">{{ payment.created_date|date:"M d, Y" }}</td>
+>>>>>>> Stashed changes
                                 <td data-label="User" style="color: var(--text-dim); font-size: 0.85rem;">
                                     {{payment.user.username}}</td>
+                                {% if user.is_staff %}
+                                <td data-label="Actions">
+                                    <div class="action-buttons">
+                                        {% if payment.status == 'Accepted' %}
+                                        <button class="btn-action btn-action-secondary" onclick="reversePayment({{ payment.pk }})">Reverse</button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                {% endif %}
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="empty-state">No confirmed payments found.</td>
+                                <td colspan="{% if user.is_staff %}5{% else %}4{% endif %}" class="empty-state">No confirmed payments found.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -80,15 +94,73 @@
     }
 
     .amount-cell {
-        font-weight: 700;
+        font-family: 'Outfit', monospace;
+        font-weight: 600;
         color: var(--accent);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .btn-action-primary {
+        background: rgba(129, 140, 248, 0.2);
+        color: #818cf8;
+        border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    .btn-action-primary:hover {
+        background: rgba(129, 140, 248, 0.3);
+        border-color: rgba(129, 140, 248, 0.5);
+        transform: translateY(-1px);
+    }
+
+    .btn-action-success {
+        background: rgba(52, 211, 153, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .btn-action-success:hover {
+        background: rgba(52, 211, 153, 0.3);
+        border-color: rgba(52, 211, 153, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(52, 211, 153, 0.2);
+    }
+
+    .btn-action-secondary {
+        background: rgba(148, 163, 184, 0.2);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .btn-action-secondary:hover {
+        background: rgba(148, 163, 184, 0.3);
+        border-color: rgba(148, 163, 184, 0.5);
+        transform: translateY(-1px);
     }
 
     .empty-state {
         text-align: center;
         padding: 3rem !important;
         color: var(--text-dim);
-        font-style: italic;
     }
 
     @media (max-width: 768px) {
@@ -128,4 +200,17 @@
         }
     }
 </style>
+<<<<<<< Updated upstream
 {% endblock %}
+=======
+
+<script>
+function reversePayment(paymentId) {
+    if (confirm('Are you sure you want to reverse this accepted payment? This will move it back to draft status.')) {
+        // Placeholder for reversing payment
+        alert('Reverse payment ID: ' + paymentId + '\n\nThis would reverse the payment and move it back to draft status for reprocessing.');
+    }
+}
+</script>
+{% endblock %}
+>>>>>>> Stashed changes

@@ -10,7 +10,7 @@
     <section class="records-block">
         <div class="table-container">
             <div class="table-wrapper">
-                <table>
+                <table class="responsive-table">
                     <thead>
                         <tr>
                             <th>Student Name</th>
@@ -25,11 +25,18 @@
                     <tbody>
                         {% for payment in payments %}
                         <tr id="payment-row-{{ payment.pk }}">
-                            <td data-label="Student Name" style="min-width: 140px;">{{ payment.student_name }}</td>
-                            <td data-label="Monthly Fee" style="color: var(--primary); font-weight: 600;">
-                                {% if payment.student %}Rs.{{ payment.student.monthly_fee }}{% else %}-{% endif %}
+                            <td data-label="Student Name">{{ payment.student.name|default:payment.description|default:"Unknown" }}</td>
+                            <td data-label="Monthly Fee" class="fee-cell">
+                                {% if payment.monthly_fee %}
+                                Rs.{{ payment.monthly_fee }}
+                                {% elif payment.student %}
+                                Rs.{{ payment.student.monthly_fee }}
+                                {% else %}
+                                -
+                                {% endif %}
                             </td>
                             <td data-label="Payment Amount" class="amount-cell" id="amount-display-{{ payment.pk }}">
+<<<<<<< Updated upstream
                                 Rs.{{ payment.amount }}
                                 {% if payment.status == 'Partial' %}
                                 <span
@@ -49,14 +56,21 @@
                                         class="btn-action btn-action-success">Accept</a>
                                     <a href="{% url 'decline_payment' payment.pk %}"
                                         class="btn-action btn-action-danger">Decline</a>
+=======
+                                Rs.{{ payment.amount }}</td>
+                            <td data-label="Date">{{ payment.created_date|date:"M d, Y" }}</td>
+                            <td data-label="User" class="user-cell">{{payment.user.username}}</td>
+                            {% if user.is_staff %}
+                            <td data-label="Actions">
+                                <div class="action-buttons" id="action-btns-{{ payment.pk }}">
+                                    <button type="button" class="btn-action btn-action-primary adjust-btn" data-id="{{ payment.pk }}">Adjust</button>
+                                    <a href="{% url 'accept_payment' payment.pk %}" class="btn-action btn-action-success">Accept</a>
+                                    <a href="{% url 'decline_payment' payment.pk %}" class="btn-action btn-action-danger">Decline</a>
+>>>>>>> Stashed changes
                                 </div>
-                                <form id="adjust-form-{{ payment.pk }}"
-                                    style="display: none; gap: 0.5rem; align-items: center;" method="POST"
-                                    action="{% url 'approve_payment' payment.pk %}">
+                                <form id="adjust-form-{{ payment.pk }}" class="adjust-form" method="POST" action="{% url 'accept_payment' payment.pk %}">
                                     {% csrf_token %}
-                                    <input type="number" name="adjusted_amount" step="0.01" value="{{ payment.amount }}"
-                                        required style="padding: 0.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
-                                                  background: var(--card-bg); color: var(--text); width: 120px;">
+                                    <input type="number" name="adjusted_amount" step="0.01" value="{{ payment.amount }}" required class="adjust-input">
                                     <button type="submit" class="btn-action btn-action-success">Save & Accept</button>
                                     <button type="button" class="btn-action btn-action-secondary cancel-adjust-btn"
                                         data-id="{{ payment.pk }}">Cancel</button>
@@ -66,8 +80,12 @@
                         </tr>
                         {% empty %}
                         <tr>
+<<<<<<< Updated upstream
                             <td colspan="{% if user.is_staff %}7{% else %}6{% endif %}" class="empty-state">No pending
                                 payments found.</td>
+=======
+                            <td colspan="{% if user.is_staff %}6{% else %}5{% endif %}" class="empty-state">No draft payments found.</td>
+>>>>>>> Stashed changes
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -77,8 +95,117 @@
     </section>
 </div>
 
+<<<<<<< Updated upstream
+=======
+<style>
+    .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        align-items: flex-start;
+    }
+
+    .home-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        text-align: center;
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--primary);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        align-self: stretch;
+    }
+
+    .home-link:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        text-align: left;
+    }
+
+    .responsive-table th {
+        background: linear-gradient(135deg, rgba(129, 140, 248, 0.1), rgba(129, 140, 248, 0.05));
+        border-bottom: 2px solid var(--primary);
+        color: var(--text-main);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 0.8rem 0.5rem;
+        font-size: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .responsive-table td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 0.8rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .fee-cell {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .amount-cell {
+        font-family: 'Outfit', monospace;
+        font-weight: 500;
+    }
+
+    .user-cell {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+    }
+
+    .adjust-form {
+        display: none;
+        gap: 0.3rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .adjust-input {
+        padding: 0.4rem;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: var(--card-bg);
+        color: var(--text-main);
+        width: 100px;
+        font-size: 0.8rem;
+    }
+
+    .btn-action {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+>>>>>>> Stashed changes
 
 
+<<<<<<< Updated upstream
 table {
 width: 100%;
 border-collapse: collapse;
@@ -144,6 +271,13 @@ border-bottom: none;
 padding-top: 1rem;
 justify-content: center;
 }
+=======
+    .btn-action-primary:hover {
+        background: rgba(129, 140, 248, 0.3);
+        border-color: rgba(129, 140, 248, 0.5);
+        transform: translateY(-1px);
+    }
+>>>>>>> Stashed changes
 
 td::before {
 content: attr(data-label);
