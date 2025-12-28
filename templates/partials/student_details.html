@@ -23,13 +23,13 @@
         document.getElementById('student_id').value = "{{ student.id }}";
         
         // Auto-fill month and year based on student's last payment
-        const monthSelect = document.getElementById('month');
+        const monthInput = document.getElementById('month');
         const yearInput = document.getElementById('year');
         const monthDisplay = document.getElementById('month_display');
         const yearDisplay = document.getElementById('year_display');
         
-        if (monthSelect && yearInput) {
-            monthSelect.value = "{{ next_month }}";
+        if (monthInput && yearInput) {
+            monthInput.value = "{{ next_month }}";
             yearInput.value = "{{ next_year }}";
             
             // Set display values with readable month name

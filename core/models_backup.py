@@ -45,23 +45,48 @@ class DraftPayment(models.Model):
         super().save(*args, **kwargs)
 
     def process_payment(self):
-        """Process payment acceptance and update student's monthly status"""
+        """Process payment acceptance and update monthly status"""
         if not self.student:
             return
 
-        # Ensure valid month/year before updating student status
+        # Ensure valid month/year before writing StudentMonthlyStatus
         self.year, self.month = DraftPayment.normalize_month_year(self.year, self.month)
 
         # Use payment's monthly_fee if set, otherwise fall back to student's monthly_fee
         monthly_fee = self.monthly_fee if self.monthly_fee else self.student.monthly_fee
         amount_paid = self.amount
 
-        # Update student's monthly payment status directly
-        self.student.year = self.year
-        self.student.month = self.month
-        self.student.paid_amount = amount_paid
-        self.student.payment_status = self.status
-        self.student.save()
+        # Get or create monthly status record
+        monthly_status, created = StudentMonthlyStatus.objects.get_or_create(
+            student=self.student,
+            year=self.year,
+            month=self.month,
+            defaults={'paid_amount': 0, 'status': 'Unpaid'}
+        )
+
+        if amount_paid >= monthly_fee:
+            # Full payment
+            monthly_status.paid_amount = monthly_fee
+            monthly_status.status = 'Paid'
+            # Only update payment status if not already accepted by admin
+            if self.status != 'Accepted':
+                self.status = 'Paid'
+        else:
+            # Partial payment
+            monthly_status.paid_amount += amount_paid
+            if monthly_status.paid_amount >= monthly_fee:
+                monthly_status.paid_amount = monthly_fee
+                monthly_status.status = 'Paid'
+                # Only update payment status if not already accepted by admin
+                if self.status != 'Accepted':
+                    self.status = 'Paid'
+            else:
+                monthly_status.status = 'Half Paid'
+                # Only update payment status if not already accepted by admin
+                if self.status != 'Accepted':
+                    self.status = 'Half Paid'
+
+        monthly_status.save()
 
     @staticmethod
     def normalize_month_year(year, month):
@@ -85,20 +110,23 @@ class DraftPayment(models.Model):
     @staticmethod
     def get_last_paid_month(student):
         """Get the last paid month for a student"""
-        if student.payment_status in ['Paid', 'Half Paid', 'Accepted'] and student.year and student.month:
-            return {
-                'year': student.year,
-                'month': student.month,
-                'status': student.payment_status,
-                'amount': student.paid_amount
-            }
-        return None
+        return StudentMonthlyStatus.objects.filter(
+            student=student, 
+            status__in=['Paid', 'Half Paid', 'Accepted']
+        ).order_by('-year', '-month').first()
 
     @staticmethod
     def get_annual_report(year):
         """Get annual report grouped by month"""
-        # This will be implemented in views using Student methods
-        return []
+        return StudentMonthlyStatus.objects.filter(
+            year=year
+        ).values('month').annotate(
+            total_students=models.Count('student'),
+            paid_students=models.Count('student', filter=models.Q(status='Paid')),
+            half_paid_students=models.Count('student', filter=models.Q(status='Half Paid')),
+            unpaid_students=models.Count('student', filter=models.Q(status='Unpaid')),
+            total_collected=models.Sum('paid_amount')
+        ).order_by('month')
 
 class DraftExpense(models.Model):
     STATUS_CHOICES = [
@@ -119,32 +147,29 @@ class DraftExpense(models.Model):
         return f"Expense: {self.name} - {self.amount} ({self.status})"
 
 class Student(models.Model):
-    """
-    Student model with integrated monthly payment tracking.
-    """
-    PAYMENT_STATUS_CHOICES = [
-        ('Unpaid', 'Unpaid'),
-        ('Half Paid', 'Half Paid'),
-        ('Paid', 'Paid'),
-    ]
-
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2)
     created_date = models.DateTimeField(default=timezone.now)
-    
-    # Monthly payment tracking columns (from old StudentMonthlyStatus)
-    year = models.IntegerField(null=True, blank=True)
-    month = models.IntegerField(null=True, blank=True)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='Unpaid')
-
-    class Meta:
-        db_table = 'core_student'
-        indexes = [
-            models.Index(fields=['name']),
-        ]
 
     def __str__(self):
         return self.name
 
+class StudentMonthlyStatus(models.Model):
+    STATUS_CHOICES = [
+        ('Unpaid', 'Unpaid'),
+        ('Half Paid', 'Half Paid'),
+        ('Paid', 'Paid'),
+    ]
+    id = models.AutoField(primary_key=True)
+    student = models.ForeignKey('Student', on_delete=models.CASCADE, db_column='student_id')
+    year = models.IntegerField()
+    month = models.IntegerField()
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Unpaid')
+
+    class Meta:
+        unique_together = ['student', 'year', 'month']
+
+    def __str__(self):
+        return f"{self.student.name} - {self.year}/{self.month}: {self.status}"

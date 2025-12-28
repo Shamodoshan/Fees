@@ -3,7 +3,8 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from .models import DraftPayment, DraftExpense, Student, StudentMonthlyStatus
+from django.db import models
+from .models import DraftPayment, DraftExpense, Student
 from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
@@ -16,36 +17,22 @@ def get_next_payment_month_year(student):
     If there's a half-paid month, return that month for completion.
     If no previous payment, return current month and year.
     """
-    # First check if there's any half-paid month that needs completion
-    half_paid_status = StudentMonthlyStatus.objects.filter(
-        student=student, 
-        status='Half Paid'
-    ).order_by('year', 'month').first()
-    
-    if half_paid_status:
+    # Check if student has a payment status
+    if student.payment_status in ['Half Paid']:
         # Return the half-paid month for completion
-        return half_paid_status.month, half_paid_status.year
-    
-    # If no half-paid months, find the last confirmed payment from StudentMonthlyStatus
-    last_status = StudentMonthlyStatus.objects.filter(
-        student=student, 
-        status__in=['Paid', 'Half Paid', 'Accepted']
-    ).order_by('-year', '-month').first()
-    
-    if last_status:
-        # Get next month after last payment
-        next_month = last_status.month + 1
-        next_year = last_status.year
-        
-        # Handle year transition
+        return student.month, student.year, student.paid_amount
+    elif student.payment_status in ['Paid']:
+        # Return next month after last payment
+        next_month = student.month + 1
+        next_year = student.year
         if next_month > 12:
             next_month = 1
             next_year += 1
-            
-        return next_month, next_year
+        return next_month, next_year, 0
     else:
-        # No previous payment, use current month/year
-        return datetime.now().month, datetime.now().year
+        # No payment history - return current month
+        today = datetime.now()
+        return today.month, today.year, 0
 
 @login_required(login_url='login')
 def index(request):
@@ -85,46 +72,35 @@ def add_payment(request):
                     target_month -= 12
                     target_year += 1
 
-                # Check if there's an unpaid or half-paid status for the target month
-                current_status = StudentMonthlyStatus.objects.filter(
-                    student=student,
-                    month=target_month,
-                    year=target_year
-                ).first()
-
-                if current_status and current_status.status in ['Paid', 'Accepted']:
-                    error_message = f"Cannot create new payment for {target_month}/{target_year} - payment is already {current_status.status}."
+                # Check if there's an existing payment status for the target month
+                if student.year == target_year and student.month == target_month and student.payment_status in ['Paid', 'Accepted']:
+                    error_message = f"Cannot create new payment for {target_month}/{target_year} - payment is already {student.payment_status}."
                 else:
                     # Determine payment status and handle half payments
                     payment_amount = Decimal(amount)
                     monthly_fee_amount = Decimal(payment_monthly_fee) if payment_monthly_fee else Decimal('0')
                     
-                    # Get or create StudentMonthlyStatus for this month
-                    monthly_status, created = StudentMonthlyStatus.objects.get_or_create(
-                        student=student,
-                        month=target_month,
-                        year=target_year,
-                        defaults={'paid_amount': Decimal('0'), 'status': 'Unpaid'}
-                    )
-                    
                     # Calculate total paid after this payment
-                    total_paid = monthly_status.paid_amount + payment_amount
+                    current_paid = student.paid_amount if student.year == target_year and student.month == target_month else Decimal('0')
+                    total_paid = current_paid + payment_amount
                     
                     # Determine status based on payment amount
                     if total_paid >= monthly_fee_amount:
                         status = 'Paid'
-                        paid_amount = monthly_fee_amount  # Don't overpay
+                        final_amount = monthly_fee_amount  # Don't overpay
                     elif total_paid > 0:
                         status = 'Half Paid'
-                        paid_amount = total_paid
+                        final_amount = total_paid
                     else:
                         status = 'Unpaid'
-                        paid_amount = Decimal('0')
+                        final_amount = Decimal('0')
                     
-                    # Update StudentMonthlyStatus
-                    monthly_status.paid_amount = paid_amount
-                    monthly_status.status = status
-                    monthly_status.save()
+                    # Update student's monthly status directly
+                    student.year = target_year
+                    student.month = target_month
+                    student.paid_amount = final_amount
+                    student.payment_status = status
+                    student.save()
                     
                     # Create DraftPayment record
                     DraftPayment.objects.create(
@@ -155,18 +131,7 @@ def get_student_details(request):
     try:
         student = Student.objects.get(name=student_name)
         # Get next payment month and year
-        next_month, next_year = get_next_payment_month_year(student)
-        
-        # Check if there's a half-paid status for the next month
-        monthly_status = StudentMonthlyStatus.objects.filter(
-            student=student,
-            month=next_month,
-            year=next_year
-        ).first()
-        
-        remaining_fee = 0
-        if monthly_status and monthly_status.status == 'Half Paid':
-            remaining_fee = student.monthly_fee - monthly_status.paid_amount
+        next_month, next_year, remaining_fee = get_next_payment_month_year(student)
         
         context = {
             'student': student,
@@ -387,8 +352,29 @@ def analyze_view(request):
     yearly_total_expenses = sum(data['total_expenses'] for data in monthly_totals.values())
     yearly_net = yearly_total_payments - yearly_total_expenses
     
-    # Get annual report from StudentMonthlyStatus
-    annual_report = DraftPayment.get_annual_report(selected_year)
+    # Get annual report using simple queries
+    annual_report_data = []
+    for month in range(1, 13):
+        total_students = Student.objects.count()
+        paid_students = Student.objects.filter(year=selected_year, month=month, payment_status='Paid').count()
+        half_paid_students = Student.objects.filter(year=selected_year, month=month, payment_status='Half Paid').count()
+        unpaid_students = Student.objects.filter(
+            models.Q(year__isnull=True) | models.Q(month__isnull=True) | 
+            models.Q(year=selected_year, month=month, payment_status='Unpaid')
+        ).count()
+        
+        total_collected = Student.objects.filter(
+            year=selected_year, month=month, payment_status__in=['Paid', 'Half Paid']
+        ).aggregate(total=models.Sum('paid_amount'))['total'] or 0
+        
+        annual_report_data.append({
+            'month': month,
+            'total_students': total_students,
+            'paid_students': paid_students,
+            'half_paid_students': half_paid_students,
+            'unpaid_students': unpaid_students,
+            'total_collected': total_collected
+        })
     
     return render(request, 'analyze.html', {
         'monthly_totals': monthly_totals,
@@ -397,7 +383,7 @@ def analyze_view(request):
         'yearly_net': yearly_net,
         'confirmed_payments': confirmed_payments,
         'confirmed_expenses': confirmed_expenses,
-        'annual_report': annual_report,
+        'annual_report': annual_report_data,
         'selected_year': selected_year,
         'available_years': available_years
     })
@@ -517,19 +503,23 @@ def search_student_details(request):
         try:
             student = Student.objects.get(name=search_query)
             # Get last paid month
-            last_paid_month = DraftPayment.get_last_paid_month(student)
+            last_paid_data = DraftPayment.get_last_paid_month(student)
+            if last_paid_data:
+                last_paid_month = {
+                    'year': last_paid_data['year'],
+                    'month': last_paid_data['month'],
+                    'status': last_paid_data['status'],
+                    'amount': last_paid_data['amount']
+                }
             
             # Get current month status
-            try:
-                current_month = datetime.now().month
-                current_year = datetime.now().year
-                current_month_status = StudentMonthlyStatus.objects.get(
-                    student=student,
-                    month=current_month,
-                    year=current_year
-                )
-            except StudentMonthlyStatus.DoesNotExist:
-                current_month_status = None
+            current_month = datetime.now().month
+            current_year = datetime.now().year
+            if student.year == current_year and student.month == current_month:
+                current_month_status = {
+                    'status': student.payment_status,
+                    'amount': student.paid_amount
+                }
         except Student.DoesNotExist:
             pass
     
@@ -560,17 +550,22 @@ def student_annual_report(request):
 
     months = []
     if student:
-        statuses = StudentMonthlyStatus.objects.filter(student=student, year=year)
-        status_by_month = {s.month: s for s in statuses}
-
         for month in range(1, 13):
-            s = status_by_month.get(month)
-            months.append({
-                'month': month,
-                'month_name': datetime(year, month, 1).strftime('%B'),
-                'status': s.status if s else 'Unpaid',
-                'paid_amount': s.paid_amount if s else 0,
-            })
+            # Check if this month/year matches the student's payment data
+            if student.year == year and student.month == month:
+                months.append({
+                    'month': month,
+                    'month_name': datetime(year, month, 1).strftime('%B'),
+                    'status': student.payment_status,
+                    'paid_amount': student.paid_amount,
+                })
+            else:
+                months.append({
+                    'month': month,
+                    'month_name': datetime(year, month, 1).strftime('%B'),
+                    'status': 'Unpaid',
+                    'paid_amount': 0,
+                })
 
     return render(request, 'partials/student_annual_report.html', {
         'student': student,
